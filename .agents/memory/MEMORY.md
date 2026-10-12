@@ -1,0 +1,1 @@
+- [OpenAI provider choice](openai-provider.md) — The student-housing assistant uses a server-side user key, not Replit-managed AI setup.

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: student-housing
+    description: Student rental discovery and housing assistance
 paths:
   /healthz:
     get:
@@ -24,6 +26,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /housing/listings:
+    get:
+      operationId: listStudentHousingListings
+      tags: [student-housing]
+      summary: List illustrative student rentals
+      responses:
+        "200":
+          description: Example rental listings for exploring the student housing experience
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudentHousingListing"
+  /housing/assistant:
+    post:
+      operationId: sendStudentHousingChat
+      tags: [student-housing]
+      summary: Ask the housing assistant for student rental guidance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentHousingChatInput"
+      responses:
+        "200":
+          description: Assistant reply grounded in the supplied sample listing IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentHousingChatResponse"
+        "400":
+          description: Invalid message or conversation
+        "429":
+          description: The message limit has been reached temporarily
+        "502":
+          description: The assistant could not complete the request
 components:
   schemas:
     HealthStatus:
@@ -33,4 +73,87 @@ components:
           type: string
       required:
         - status
+    StudentHousingListing:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        city:
+          type: string
+        neighborhood:
+          type: string
+        monthlyRent:
+          type: number
+        currency:
+          type: string
+          enum: [INR]
+        roomType:
+          type: string
+          enum: [Shared room, Private room, Studio]
+        furnished:
+          type: boolean
+        transitMinutes:
+          type: integer
+        amenities:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: string
+        tag:
+          type: string
+      required:
+        - id
+        - title
+        - city
+        - neighborhood
+        - monthlyRent
+        - currency
+        - roomType
+        - furnished
+        - transitMinutes
+        - amenities
+        - imageUrl
+        - tag
+    StudentHousingChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          maxLength: 1200
+      required: [role, content]
+    StudentHousingChatInput:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1200
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudentHousingChatMessage"
+          maxItems: 12
+        listingIds:
+          type: array
+          items:
+            type: string
+          maxItems: 20
+      required: [message, history, listingIds]
+    StudentHousingChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        recommendedListingIds:
+          type: array
+          items:
+            type: string
+          maxItems: 3
+      required: [reply, recommendedListingIds]
 

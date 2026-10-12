@@ -1,15 +1,16 @@
-# [Project name]
+# Student Housing Finder
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A student-first rental finder with sample listings and a conversational assistant that helps students compare housing trade-offs.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/student-housing run dev` — run the student housing website
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required secret: `OPENAI_API_KEY` — server-side key for the housing assistant; configure it with Replit Secrets
 
 ## Stack
 
@@ -22,23 +23,27 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/student-housing/` — student-facing rental finder
+- `artifacts/api-server/src/routes/student-housing/` — illustrative listing catalog and assistant route
+- `lib/api-spec/openapi.yaml` — listing/chat API contract
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The assistant uses the project's `OPENAI_API_KEY` server-side; do not switch back to the managed integration without asking.
+- Chat history is held in the browser for the session and sent to OpenAI only after the interface discloses this.
+- Rental records and property imagery are illustrative only, not claims of available homes.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Students can filter and save demo rentals across Bengaluru, Pune, and Hyderabad, then ask an AI guide to compare budget, privacy, amenities, and transit. All inventory and prices are illustrative.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Keep demo homes and availability clearly labeled as illustrative until a verified inventory source is connected.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The assistant is rate-limited to 8 messages per minute per client IP.
 
 ## Pointers
 
