@@ -21,5 +21,17 @@ export interface StudentHousingAgentSettings {
      * @maximum 10
      */
   goalOrientationScale: number;
+  /**
+     * Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.
+     * @minItems 5
+     * @maxItems 5
+     * @items.maxLength 400
+     */
+  empathyExamples: string[];
+  /**
+     * The goal the assistant works toward in conversations. May be blank.
+     * @maxLength 500
+     */
+  goal: string;
   updatedAt: Date;
 }
