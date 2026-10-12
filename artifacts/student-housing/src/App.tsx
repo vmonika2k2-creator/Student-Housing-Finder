@@ -10,6 +10,7 @@ import { ArrowDown, ArrowRight, Bookmark, Check, ChevronDown, CircleHelp, Compas
 import { useLocation, Router as WouterRouter, Route, Switch } from 'wouter';
 import { type ReactNode } from 'react';
 import NotFound from '@/pages/not-found';
+import Admin from '@/pages/Admin';
 import './index.css';
 import './housing.css';
 
@@ -157,7 +158,7 @@ function Home() {
 }
 
 function Router() {
-  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
+  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/admin" component={Admin} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
 }
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();

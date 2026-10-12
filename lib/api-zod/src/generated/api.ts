@@ -69,3 +69,102 @@ export const SendStudentHousingChatResponse = zod.object({
 })
 
 
+/**
+ * @summary Check whether the current browser has an admin session
+ */
+export const GetHousingAdminSessionResponse = zod.object({
+  "authenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Start an admin session with the configured password
+ */
+export const loginHousingAdminBodyPasswordMax = 1024;
+
+
+
+export const LoginHousingAdminBody = zod.object({
+  "password": zod.string().min(1).max(loginHousingAdminBodyPasswordMax)
+})
+
+export const LoginHousingAdminResponse = zod.object({
+  "authenticated": zod.boolean()
+})
+
+
+/**
+ * @summary End the current admin session
+ */
+export const LogoutHousingAdminResponse = zod.object({
+  "authenticated": zod.boolean()
+})
+
+
+/**
+ * @summary Read assistant behavior settings
+ */
+export const getHousingAdminAgentSettingsResponsePersonaMax = 1000;
+
+export const getHousingAdminAgentSettingsResponseToneMax = 300;
+
+export const getHousingAdminAgentSettingsResponseEmpathyScaleMin = 0;
+export const getHousingAdminAgentSettingsResponseEmpathyScaleMax = 10;
+
+export const getHousingAdminAgentSettingsResponseGoalOrientationScaleMin = 0;
+export const getHousingAdminAgentSettingsResponseGoalOrientationScaleMax = 10;
+
+
+
+export const GetHousingAdminAgentSettingsResponse = zod.object({
+  "persona": zod.string().max(getHousingAdminAgentSettingsResponsePersonaMax),
+  "tone": zod.string().max(getHousingAdminAgentSettingsResponseToneMax),
+  "empathyScale": zod.number().int().min(getHousingAdminAgentSettingsResponseEmpathyScaleMin).max(getHousingAdminAgentSettingsResponseEmpathyScaleMax),
+  "goalOrientationScale": zod.number().int().min(getHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(getHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update assistant behavior settings
+ */
+export const updateHousingAdminAgentSettingsBodyPersonaMax = 1000;
+
+export const updateHousingAdminAgentSettingsBodyToneMax = 300;
+
+export const updateHousingAdminAgentSettingsBodyEmpathyScaleMin = 0;
+export const updateHousingAdminAgentSettingsBodyEmpathyScaleMax = 10;
+
+export const updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin = 0;
+export const updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax = 10;
+
+
+
+export const UpdateHousingAdminAgentSettingsBody = zod.object({
+  "persona": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyPersonaMax),
+  "tone": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyToneMax),
+  "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyEmpathyScaleMin).max(updateHousingAdminAgentSettingsBodyEmpathyScaleMax),
+  "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax)
+})
+
+export const updateHousingAdminAgentSettingsResponsePersonaMax = 1000;
+
+export const updateHousingAdminAgentSettingsResponseToneMax = 300;
+
+export const updateHousingAdminAgentSettingsResponseEmpathyScaleMin = 0;
+export const updateHousingAdminAgentSettingsResponseEmpathyScaleMax = 10;
+
+export const updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin = 0;
+export const updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax = 10;
+
+
+
+export const UpdateHousingAdminAgentSettingsResponse = zod.object({
+  "persona": zod.string().max(updateHousingAdminAgentSettingsResponsePersonaMax),
+  "tone": zod.string().max(updateHousingAdminAgentSettingsResponseToneMax),
+  "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseEmpathyScaleMin).max(updateHousingAdminAgentSettingsResponseEmpathyScaleMax),
+  "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
+  "updatedAt": zod.coerce.date()
+})
+
+

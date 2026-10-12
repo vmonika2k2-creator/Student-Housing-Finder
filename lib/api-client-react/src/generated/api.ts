@@ -21,6 +21,10 @@ import type {
 
 import type {
   HealthStatus,
+  HousingAdminLogin,
+  HousingAdminSession,
+  StudentHousingAgentSettings,
+  StudentHousingAgentSettingsInput,
   StudentHousingChatInput,
   StudentHousingChatResponse,
   StudentHousingListing
@@ -294,5 +298,409 @@ export const useSendStudentHousingChat = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getSendStudentHousingChatMutationOptions(options));
+    }
+
+export const getGetHousingAdminSessionUrl = () => {
+
+
+
+
+  return `/api/housing/admin/session`
+}
+
+/**
+ * @summary Check whether the current browser has an admin session
+ */
+export const getHousingAdminSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<HousingAdminSession> => {
+
+  return customFetch<HousingAdminSession>(getGetHousingAdminSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHousingAdminSessionQueryKey = () => {
+    return [
+    `/api/housing/admin/session`
+    ] as const;
+    }
+
+
+export const getGetHousingAdminSessionQueryOptions = <TData = Awaited<ReturnType<typeof getHousingAdminSession>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHousingAdminSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHousingAdminSession>>> = ({ signal }) => getHousingAdminSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHousingAdminSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getHousingAdminSession>>>
+export type GetHousingAdminSessionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check whether the current browser has an admin session
+ */
+
+export function useGetHousingAdminSession<TData = Awaited<ReturnType<typeof getHousingAdminSession>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHousingAdminSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLoginHousingAdminUrl = () => {
+
+
+
+
+  return `/api/housing/admin/session`
+}
+
+/**
+ * @summary Start an admin session with the configured password
+ */
+export const loginHousingAdmin = async (housingAdminLogin: HousingAdminLogin, options?: Parameters<typeof customFetch>[1]): Promise<HousingAdminSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<HousingAdminSession>(getLoginHousingAdminUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(housingAdminLogin)
+  }
+);}
+
+
+
+
+
+export const getLoginHousingAdminMutationKey = () => ['loginHousingAdmin'] as const;
+
+export const getLoginHousingAdminMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginHousingAdmin>>, TError,LoginHousingAdminMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof loginHousingAdmin>>, TError,LoginHousingAdminMutationVariables, TContext> => {
+
+const mutationKey = getLoginHousingAdminMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof loginHousingAdmin>>, LoginHousingAdminMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  loginHousingAdmin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LoginHousingAdminMutationResult = NonNullable<Awaited<ReturnType<typeof loginHousingAdmin>>>
+    export type LoginHousingAdminMutationBody = BodyType<HousingAdminLogin>
+    export type LoginHousingAdminMutationError = ErrorType<void>
+    export type LoginHousingAdminMutationVariables = {data: BodyType<HousingAdminLogin>}
+
+    /**
+ * @summary Start an admin session with the configured password
+ */
+export const useLoginHousingAdmin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loginHousingAdmin>>, TError,LoginHousingAdminMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof loginHousingAdmin>>,
+        TError,
+        LoginHousingAdminMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLoginHousingAdminMutationOptions(options));
+    }
+
+export const getLogoutHousingAdminUrl = () => {
+
+
+
+
+  return `/api/housing/admin/logout`
+}
+
+/**
+ * @summary End the current admin session
+ */
+export const logoutHousingAdmin = async ( options?: Parameters<typeof customFetch>[1]): Promise<HousingAdminSession> => {
+
+  return customFetch<HousingAdminSession>(getLogoutHousingAdminUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogoutHousingAdminMutationKey = () => ['logoutHousingAdmin'] as const;
+
+export const getLogoutHousingAdminMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutHousingAdmin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logoutHousingAdmin>>, TError,void, TContext> => {
+
+const mutationKey = getLogoutHousingAdminMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutHousingAdmin>>, void> = () => {
+
+
+          return  logoutHousingAdmin(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogoutHousingAdminMutationResult = NonNullable<Awaited<ReturnType<typeof logoutHousingAdmin>>>
+
+    export type LogoutHousingAdminMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary End the current admin session
+ */
+export const useLogoutHousingAdmin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logoutHousingAdmin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logoutHousingAdmin>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogoutHousingAdminMutationOptions(options));
+    }
+
+export const getGetHousingAdminAgentSettingsUrl = () => {
+
+
+
+
+  return `/api/housing/admin/agent-settings`
+}
+
+/**
+ * @summary Read assistant behavior settings
+ */
+export const getHousingAdminAgentSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<StudentHousingAgentSettings> => {
+
+  return customFetch<StudentHousingAgentSettings>(getGetHousingAdminAgentSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHousingAdminAgentSettingsQueryKey = () => {
+    return [
+    `/api/housing/admin/agent-settings`
+    ] as const;
+    }
+
+
+export const getGetHousingAdminAgentSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getHousingAdminAgentSettings>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminAgentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHousingAdminAgentSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHousingAdminAgentSettings>>> = ({ signal }) => getHousingAdminAgentSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminAgentSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHousingAdminAgentSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getHousingAdminAgentSettings>>>
+export type GetHousingAdminAgentSettingsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Read assistant behavior settings
+ */
+
+export function useGetHousingAdminAgentSettings<TData = Awaited<ReturnType<typeof getHousingAdminAgentSettings>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHousingAdminAgentSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHousingAdminAgentSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateHousingAdminAgentSettingsUrl = () => {
+
+
+
+
+  return `/api/housing/admin/agent-settings`
+}
+
+/**
+ * @summary Update assistant behavior settings
+ */
+export const updateHousingAdminAgentSettings = async (studentHousingAgentSettingsInput: StudentHousingAgentSettingsInput, options?: Parameters<typeof customFetch>[1]): Promise<StudentHousingAgentSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<StudentHousingAgentSettings>(getUpdateHousingAdminAgentSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(studentHousingAgentSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateHousingAdminAgentSettingsMutationKey = () => ['updateHousingAdminAgentSettings'] as const;
+
+export const getUpdateHousingAdminAgentSettingsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>, TError,UpdateHousingAdminAgentSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>, TError,UpdateHousingAdminAgentSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateHousingAdminAgentSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>, UpdateHousingAdminAgentSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateHousingAdminAgentSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateHousingAdminAgentSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>>
+    export type UpdateHousingAdminAgentSettingsMutationBody = BodyType<StudentHousingAgentSettingsInput>
+    export type UpdateHousingAdminAgentSettingsMutationError = ErrorType<void>
+    export type UpdateHousingAdminAgentSettingsMutationVariables = {data: BodyType<StudentHousingAgentSettingsInput>}
+
+    /**
+ * @summary Update assistant behavior settings
+ */
+export const useUpdateHousingAdminAgentSettings = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>, TError,UpdateHousingAdminAgentSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateHousingAdminAgentSettings>>,
+        TError,
+        UpdateHousingAdminAgentSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateHousingAdminAgentSettingsMutationOptions(options));
     }
 

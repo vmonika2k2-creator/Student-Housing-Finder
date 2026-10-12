@@ -7,6 +7,10 @@
  */
 
 export * from './healthStatus';
+export * from './housingAdminLogin';
+export * from './housingAdminSession';
+export * from './studentHousingAgentSettings';
+export * from './studentHousingAgentSettingsInput';
 export * from './studentHousingChatInput';
 export * from './studentHousingChatMessage';
 export * from './studentHousingChatMessageRole';

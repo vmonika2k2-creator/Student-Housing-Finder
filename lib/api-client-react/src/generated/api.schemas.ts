@@ -72,3 +72,56 @@ export interface StudentHousingChatResponse {
   recommendedListingIds: string[];
 }
 
+export interface HousingAdminSession {
+  authenticated: boolean;
+}
+
+export interface HousingAdminLogin {
+  /**
+     * @minLength 1
+     * @maxLength 1024
+     */
+  password: string;
+}
+
+export interface StudentHousingAgentSettings {
+  /** @maxLength 1000 */
+  persona: string;
+  /** @maxLength 300 */
+  tone: string;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  empathyScale: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  goalOrientationScale: number;
+  updatedAt: string;
+}
+
+export interface StudentHousingAgentSettingsInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  persona: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  tone: string;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  empathyScale: number;
+  /**
+     * @minimum 0
+     * @maximum 10
+     */
+  goalOrientationScale: number;
+}
+

@@ -64,7 +64,100 @@ paths:
           description: The message limit has been reached temporarily
         "502":
           description: The assistant could not complete the request
+  /housing/admin/session:
+    get:
+      operationId: getHousingAdminSession
+      tags: [student-housing]
+      summary: Check whether the current browser has an admin session
+      responses:
+        "200":
+          description: Current admin authentication state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HousingAdminSession"
+    post:
+      operationId: loginHousingAdmin
+      tags: [student-housing]
+      summary: Start an admin session with the configured password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HousingAdminLogin"
+      responses:
+        "200":
+          description: Admin session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HousingAdminSession"
+        "400":
+          description: Invalid login request
+        "401":
+          description: Password was not accepted
+        "429":
+          description: Too many login attempts
+        "503":
+          description: Admin password is not configured
+  /housing/admin/logout:
+    post:
+      operationId: logoutHousingAdmin
+      tags: [student-housing]
+      summary: End the current admin session
+      responses:
+        "200":
+          description: Admin session ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HousingAdminSession"
+  /housing/admin/agent-settings:
+    get:
+      operationId: getHousingAdminAgentSettings
+      tags: [student-housing]
+      summary: Read assistant behavior settings
+      security:
+        - housingAdminCookie: []
+      responses:
+        "200":
+          description: Current assistant behavior settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentHousingAgentSettings"
+        "401":
+          description: Admin session required
+    put:
+      operationId: updateHousingAdminAgentSettings
+      tags: [student-housing]
+      summary: Update assistant behavior settings
+      security:
+        - housingAdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentHousingAgentSettingsInput"
+      responses:
+        "200":
+          description: Updated assistant behavior settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentHousingAgentSettings"
+        "400":
+          description: Settings did not pass validation
+        "401":
+          description: Admin session required
 components:
+  securitySchemes:
+    housingAdminCookie:
+      type: apiKey
+      in: cookie
+      name: housing_admin_session
   schemas:
     HealthStatus:
       type: object
@@ -156,4 +249,59 @@ components:
             type: string
           maxItems: 3
       required: [reply, recommendedListingIds]
+    HousingAdminSession:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+      required: [authenticated]
+    HousingAdminLogin:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+          maxLength: 1024
+      required: [password]
+    StudentHousingAgentSettings:
+      type: object
+      properties:
+        persona:
+          type: string
+          maxLength: 1000
+        tone:
+          type: string
+          maxLength: 300
+        empathyScale:
+          type: integer
+          minimum: 0
+          maximum: 10
+        goalOrientationScale:
+          type: integer
+          minimum: 0
+          maximum: 10
+        updatedAt:
+          type: string
+          format: date-time
+      required: [persona, tone, empathyScale, goalOrientationScale, updatedAt]
+    StudentHousingAgentSettingsInput:
+      type: object
+      properties:
+        persona:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        tone:
+          type: string
+          minLength: 1
+          maxLength: 300
+        empathyScale:
+          type: integer
+          minimum: 0
+          maximum: 10
+        goalOrientationScale:
+          type: integer
+          minimum: 0
+          maximum: 10
+      required: [persona, tone, empathyScale, goalOrientationScale]
 
