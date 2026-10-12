@@ -29,7 +29,7 @@ A student-first rental finder with sample listings and a conversational assistan
 
 ## Architecture decisions
 
-- The assistant uses the project's `OPENAI_API_KEY` server-side; do not switch back to the managed integration without asking.
+- The assistant must make a real server-side OpenAI call using the project's `OPENAI_API_KEY` and return the generated reply; never ship a canned or stubbed response. Do not switch back to the managed integration without asking.
 - Chat history is held in the browser for the session and sent to OpenAI only after the interface discloses this.
 - Rental records and property imagery are illustrative only, not claims of available homes.
 

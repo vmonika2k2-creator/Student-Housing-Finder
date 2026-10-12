@@ -42,11 +42,30 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
   );
   const allowedIds = new Set(availableListings.map((listing) => listing.id));
 
+  let phase = "openai_completion";
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
-      max_completion_tokens: 768,
-      response_format: { type: "json_object" },
+      max_completion_tokens: 8192,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "student_housing_reply",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              reply: { type: "string" },
+              recommendedListingIds: {
+                type: "array",
+                items: { type: "string" },
+              },
+            },
+            required: ["reply", "recommendedListingIds"],
+            additionalProperties: false,
+          },
+        },
+      },
       messages: [
         {
           role: "system",
@@ -65,6 +84,7 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
       ],
     });
 
+    phase = "response_validation";
     const rawReply = completion.choices[0]?.message.content;
     if (!rawReply) {
       throw new Error("The assistant returned an empty response.");
@@ -83,8 +103,19 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
         .slice(0, 3),
     });
     res.json(result);
-  } catch {
-    req.log.error("Student housing assistant request failed");
+  } catch (error) {
+    const safeErrorDetails =
+      error instanceof OpenAI.APIError
+        ? {
+            name: error.name,
+            status: error.status,
+            code: error.code,
+            requestId: error.requestID,
+          }
+        : {
+            name: error instanceof Error ? error.name : "UnknownError",
+          };
+    req.log.error({ phase, upstream: safeErrorDetails }, "Student housing assistant request failed");
     res.status(502).json({
       error: "The housing assistant is temporarily unavailable. Please try again.",
     });
