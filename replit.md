@@ -40,7 +40,7 @@ Students can filter and save demo rentals across Bengaluru, Pune, and Hyderabad,
 
 ## Admin panel
 
-`/admin` (password-protected) lets an admin set the assistant's persona, tone, empathy (0-10), and passive vs goal-oriented (0-10). Settings are stored in the `student_housing_agent_settings` table and added to the assistant's system prompt on every chat request. They change style only and cannot override the accuracy and safety rules.
+`/admin` (password-protected) lets an admin set the assistant's persona, tone, empathy (0-10) with an example reply for each of five empathy stages (0-1, 2-3, 4-6, 7-8, 9-10), and initiative (passive to goal-oriented, 0-10) with a goal textbox. Settings are stored in the `student_housing_agent_settings` table and added to the assistant's system prompt on every chat request, with the stage matching the current empathy value marked as the one to follow. They change style only and cannot override the accuracy and safety rules.
 
 ## User preferences
 

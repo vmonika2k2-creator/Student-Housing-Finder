@@ -114,6 +114,13 @@ export const getHousingAdminAgentSettingsResponseEmpathyScaleMax = 10;
 export const getHousingAdminAgentSettingsResponseGoalOrientationScaleMin = 0;
 export const getHousingAdminAgentSettingsResponseGoalOrientationScaleMax = 10;
 
+export const getHousingAdminAgentSettingsResponseEmpathyExamplesItemMax = 400;
+
+export const getHousingAdminAgentSettingsResponseEmpathyExamplesMin = 5;
+export const getHousingAdminAgentSettingsResponseEmpathyExamplesMax = 5;
+
+export const getHousingAdminAgentSettingsResponseGoalMax = 500;
+
 
 
 export const GetHousingAdminAgentSettingsResponse = zod.object({
@@ -121,6 +128,8 @@ export const GetHousingAdminAgentSettingsResponse = zod.object({
   "tone": zod.string().max(getHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(getHousingAdminAgentSettingsResponseEmpathyScaleMin).max(getHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(getHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(getHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
+  "empathyExamples": zod.array(zod.string().max(getHousingAdminAgentSettingsResponseEmpathyExamplesItemMax)).min(getHousingAdminAgentSettingsResponseEmpathyExamplesMin).max(getHousingAdminAgentSettingsResponseEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
+  "goal": zod.string().max(getHousingAdminAgentSettingsResponseGoalMax).describe('The goal the assistant works toward in conversations. May be blank.'),
   "updatedAt": zod.coerce.date()
 })
 
@@ -138,13 +147,22 @@ export const updateHousingAdminAgentSettingsBodyEmpathyScaleMax = 10;
 export const updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin = 0;
 export const updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax = 10;
 
+export const updateHousingAdminAgentSettingsBodyEmpathyExamplesItemMax = 400;
+
+export const updateHousingAdminAgentSettingsBodyEmpathyExamplesMin = 5;
+export const updateHousingAdminAgentSettingsBodyEmpathyExamplesMax = 5;
+
+export const updateHousingAdminAgentSettingsBodyGoalMax = 500;
+
 
 
 export const UpdateHousingAdminAgentSettingsBody = zod.object({
   "persona": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyPersonaMax),
   "tone": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyEmpathyScaleMin).max(updateHousingAdminAgentSettingsBodyEmpathyScaleMax),
-  "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax)
+  "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax),
+  "empathyExamples": zod.array(zod.string().max(updateHousingAdminAgentSettingsBodyEmpathyExamplesItemMax)).min(updateHousingAdminAgentSettingsBodyEmpathyExamplesMin).max(updateHousingAdminAgentSettingsBodyEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
+  "goal": zod.string().max(updateHousingAdminAgentSettingsBodyGoalMax).describe('The goal the assistant works toward in conversations. May be blank.')
 })
 
 export const updateHousingAdminAgentSettingsResponsePersonaMax = 1000;
@@ -157,6 +175,13 @@ export const updateHousingAdminAgentSettingsResponseEmpathyScaleMax = 10;
 export const updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin = 0;
 export const updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax = 10;
 
+export const updateHousingAdminAgentSettingsResponseEmpathyExamplesItemMax = 400;
+
+export const updateHousingAdminAgentSettingsResponseEmpathyExamplesMin = 5;
+export const updateHousingAdminAgentSettingsResponseEmpathyExamplesMax = 5;
+
+export const updateHousingAdminAgentSettingsResponseGoalMax = 500;
+
 
 
 export const UpdateHousingAdminAgentSettingsResponse = zod.object({
@@ -164,6 +189,8 @@ export const UpdateHousingAdminAgentSettingsResponse = zod.object({
   "tone": zod.string().max(updateHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseEmpathyScaleMin).max(updateHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
+  "empathyExamples": zod.array(zod.string().max(updateHousingAdminAgentSettingsResponseEmpathyExamplesItemMax)).min(updateHousingAdminAgentSettingsResponseEmpathyExamplesMin).max(updateHousingAdminAgentSettingsResponseEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
+  "goal": zod.string().max(updateHousingAdminAgentSettingsResponseGoalMax).describe('The goal the assistant works toward in conversations. May be blank.'),
   "updatedAt": zod.coerce.date()
 })
 

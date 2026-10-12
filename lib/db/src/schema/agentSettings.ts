@@ -1,8 +1,11 @@
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * Behavior settings for the student housing assistant.
  * The table holds a single row (id = 1) that the admin panel edits.
+ *
+ * `empathy_examples` and `goal` are null until the admin first saves them,
+ * which lets the server tell "never set" (use defaults) from "left blank".
  */
 export const studentHousingAgentSettingsTable = pgTable(
   "student_housing_agent_settings",
@@ -12,6 +15,8 @@ export const studentHousingAgentSettingsTable = pgTable(
     tone: text("tone").notNull(),
     empathyScale: integer("empathy_scale").notNull(),
     goalOrientationScale: integer("goal_orientation_scale").notNull(),
+    empathyExamples: jsonb("empathy_examples").$type<string[]>(),
+    goal: text("goal"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

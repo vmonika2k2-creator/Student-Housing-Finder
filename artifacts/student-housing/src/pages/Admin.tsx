@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { Form } from '@/components/ui/form';
@@ -19,6 +19,37 @@ import './admin.css';
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+const EMPATHY_STAGES = [
+  { label: 'Matter-of-fact', range: '0–1', min: 0, max: 1 },
+  { label: 'Polite', range: '2–3', min: 2, max: 3 },
+  { label: 'Considerate', range: '4–6', min: 4, max: 6 },
+  { label: 'Warm', range: '7–8', min: 7, max: 8 },
+  { label: 'Deeply empathetic', range: '9–10', min: 9, max: 10 },
+];
+const EMPATHY_EXAMPLE_PLACEHOLDERS = [
+  'Example: a short, factual reply with no comment on feelings.',
+  'Example: a brief, courteous acknowledgement, then the facts.',
+  'Example: a sentence of understanding, then practical help.',
+  'Example: a warm reply that names the feeling before giving advice.',
+  'Example: a reply that fully recognizes the feeling and reassures before helping.',
+];
+
+function empathyStageFor(value: number) {
+  const index = EMPATHY_STAGES.findIndex((stage) => value >= stage.min && value <= stage.max);
+  return index === -1 ? 2 : index;
+}
+
+function toFormValues(settings: StudentHousingAgentSettingsInput): StudentHousingAgentSettingsInput {
+  return {
+    persona: settings.persona,
+    tone: settings.tone,
+    empathyScale: settings.empathyScale,
+    goalOrientationScale: settings.goalOrientationScale,
+    empathyExamples: Array.from({ length: EMPATHY_STAGES.length }, (_, index) => settings.empathyExamples[index] ?? ''),
+    goal: settings.goal,
+  };
 }
 
 function AdminLogin({ onLogin }: { onLogin: (password: string) => Promise<void> }) {
@@ -98,6 +129,7 @@ function ScaleField({
   low,
   high,
   testId,
+  children,
 }: {
   id: string;
   label: string;
@@ -107,6 +139,7 @@ function ScaleField({
   low: string;
   high: string;
   testId: string;
+  children?: ReactNode;
 }) {
   return (
     <section className="scale-card" aria-labelledby={`${id}-label`} data-testid={`panel-${id}`}>
@@ -132,6 +165,7 @@ function ScaleField({
       />
       <div className="scale-endpoints"><span>{low}</span><span>{high}</span></div>
       <div className="scale-ticks" aria-hidden="true">{Array.from({ length: 11 }, (_, index) => <span key={index} className={index <= value ? 'filled' : ''} />)}</div>
+      {children}
     </section>
   );
 }
@@ -155,19 +189,14 @@ function SettingsEditor({
   });
   const update = useUpdateHousingAdminAgentSettings();
   const form = useForm<StudentHousingAgentSettingsInput>({
-    defaultValues: { persona: '', tone: '', empathyScale: 5, goalOrientationScale: 5 },
+    defaultValues: { persona: '', tone: '', empathyScale: 5, goalOrientationScale: 5, empathyExamples: ['', '', '', '', ''], goal: '' },
     mode: 'onChange',
   });
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (settings.data) {
-      form.reset({
-        persona: settings.data.persona,
-        tone: settings.data.tone,
-        empathyScale: settings.data.empathyScale,
-        goalOrientationScale: settings.data.goalOrientationScale,
-      });
+      form.reset(toFormValues(settings.data));
     }
   }, [settings.data, form]);
 
@@ -175,12 +204,7 @@ function SettingsEditor({
     setSaveError('');
     try {
       const saved = await update.mutateAsync({ data: values });
-      form.reset({
-        persona: saved.persona,
-        tone: saved.tone,
-        empathyScale: saved.empathyScale,
-        goalOrientationScale: saved.goalOrientationScale,
-      });
+      form.reset(toFormValues(saved));
       queryClient.setQueryData(getGetHousingAdminAgentSettingsQueryKey(), saved);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetHousingAdminAgentSettingsQueryKey() }),
@@ -194,6 +218,8 @@ function SettingsEditor({
   const { register, watch, setValue, handleSubmit, formState: { isDirty, errors } } = form;
   const empathy = watch('empathyScale');
   const goalOrientation = watch('goalOrientationScale');
+  const empathyStage = empathyStageFor(empathy);
+  const goalText = watch('goal') ?? '';
 
   return (
     <div className="admin-settings-page">
@@ -273,9 +299,48 @@ function SettingsEditor({
                 <div className="section-number">03</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">CONVERSATION BALANCE</p><h2 id="scales-title">Response style</h2></div><span className="section-note">Fine-tune the guide</span></div>
-                  <p className="editor-intro">Choose how much the guide leans into emotional support and practical next steps.</p>
-                  <ScaleField id="empathy-scale" label="Empathy" description="How much should it acknowledge feelings and uncertainty?" value={empathy} onChange={(value) => setValue('empathyScale', value, { shouldDirty: true, shouldValidate: true })} low="Direct & factual" high="Highly empathetic" testId="range-admin-empathy" />
-                  <ScaleField id="goal-orientation-scale" label="Goal orientation" description="How readily should it help a student turn reflection into action?" value={goalOrientation} onChange={(value) => setValue('goalOrientationScale', value, { shouldDirty: true, shouldValidate: true })} low="Passive & exploratory" high="Goal-oriented" testId="range-admin-goal-orientation" />
+                  <p className="editor-intro">Choose how empathetic the guide is, and how actively it works toward your goal.</p>
+                  <ScaleField id="empathy-scale" label="Empathy" description="How much should it acknowledge feelings and uncertainty?" value={empathy} onChange={(value) => setValue('empathyScale', value, { shouldDirty: true, shouldValidate: true })} low="Direct & factual" high="Highly empathetic" testId="range-admin-empathy">
+                    <div className="stage-list" data-testid="panel-empathy-stages">
+                      <p className="stage-intro">Write an example reply for each of the five stages. The guide uses them to understand what each level of empathy sounds like, then responds at the stage your slider points to.</p>
+                      {EMPATHY_STAGES.map((stage, index) => {
+                        const active = index === empathyStage;
+                        const example = watch(`empathyExamples.${index}`) ?? '';
+                        return (
+                          <div key={stage.label} className={`stage-item${active ? ' active' : ''}`} data-testid={`panel-empathy-stage-${index + 1}`}>
+                            <div className="stage-head">
+                              <label htmlFor={`empathy-example-${index}`}><span className="stage-num">Stage {index + 1}</span>{stage.label}</label>
+                              <span className="stage-range">Scale {stage.range}{active ? ' · In use now' : ''}</span>
+                            </div>
+                            <textarea
+                              id={`empathy-example-${index}`}
+                              rows={3}
+                              maxLength={400}
+                              placeholder={EMPATHY_EXAMPLE_PLACEHOLDERS[index]}
+                              {...register(`empathyExamples.${index}`, { maxLength: { value: 400, message: 'Keep each example under 400 characters.' } })}
+                              data-testid={`textarea-admin-empathy-example-${index + 1}`}
+                            />
+                            <div className="field-meta"><span>{active ? 'The guide is matching this stage right now.' : 'Optional'}</span><span data-testid={`text-empathy-example-count-${index + 1}`}>{example.length}/400</span></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScaleField>
+                  <ScaleField id="goal-orientation-scale" label="Initiative" description="How much should the guide take the lead toward the goal below?" value={goalOrientation} onChange={(value) => setValue('goalOrientationScale', value, { shouldDirty: true, shouldValidate: true })} low="Passive & exploratory" high="Goal-oriented" testId="range-admin-goal-orientation">
+                    <div className="goal-box">
+                      <label className="admin-label" htmlFor="goal">Goal for the conversation</label>
+                      <textarea
+                        id="goal"
+                        rows={3}
+                        maxLength={500}
+                        placeholder="For example: Help the student narrow down to two or three homes they would be happy to visit."
+                        {...register('goal', { maxLength: { value: 500, message: 'Keep the goal under 500 characters.' } })}
+                        aria-describedby="goal-help goal-count"
+                        data-testid="textarea-admin-goal"
+                      />
+                      <div className="field-meta"><span id="goal-help">The higher the initiative, the more actively the guide steers toward this goal. Leave blank for no specific goal.</span><span id="goal-count" data-testid="text-goal-character-count">{goalText.length}/500</span></div>
+                    </div>
+                  </ScaleField>
                 </div>
               </section>
             </div>

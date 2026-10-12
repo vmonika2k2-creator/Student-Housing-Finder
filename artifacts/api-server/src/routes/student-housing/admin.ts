@@ -105,6 +105,8 @@ router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
       tone,
       empathyScale: parsed.data.empathyScale,
       goalOrientationScale: parsed.data.goalOrientationScale,
+      empathyExamples: parsed.data.empathyExamples.map((example) => example.trim()),
+      goal: parsed.data.goal.trim(),
     });
     res.json(UpdateHousingAdminAgentSettingsResponse.parse(saved));
   } catch (error) {
