@@ -11,6 +11,7 @@ A student-first rental finder with sample listings and a conversational assistan
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required secret: `OPENAI_API_KEY` — server-side key for the housing assistant; configure it with Replit Secrets
+- Required secret: `ADMIN_PASSWORD` — password for the admin panel at `/admin` (optional `ADMIN_SESSION_SECRET` overrides the cookie signing key)
 
 ## Stack
 
@@ -36,6 +37,10 @@ A student-first rental finder with sample listings and a conversational assistan
 ## Product
 
 Students can filter and save demo rentals across Bengaluru, Pune, and Hyderabad, then ask an AI guide to compare budget, privacy, amenities, and transit. All inventory and prices are illustrative.
+
+## Admin panel
+
+`/admin` (password-protected) lets an admin set the assistant's persona, tone, empathy (0-10), and passive vs goal-oriented (0-10). Settings are stored in the `student_housing_agent_settings` table and added to the assistant's system prompt on every chat request. They change style only and cannot override the accuracy and safety rules.
 
 ## User preferences
 
