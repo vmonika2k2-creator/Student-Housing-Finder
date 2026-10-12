@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Student Housing Finder"
+description = "A student-first rental discovery website with a conversational housing assistant that helps compare budget, commute, roommates, and preferences. Includes sample listings for exploration."
+version = "1.0.0"
+id = "artifacts/student-housing"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24051
+
+[services.development]
+run = "pnpm --filter @workspace/student-housing run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/student-housing", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/student-housing/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24051"
+BASE_PATH = "/"
