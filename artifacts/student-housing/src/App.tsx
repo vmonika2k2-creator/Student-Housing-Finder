@@ -26,6 +26,7 @@ function Home() {
   const [maxTransit, setMaxTransit] = useState(45);
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [savedOnly, setSavedOnly] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [saved, setSaved] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('student-housing-saved') ?? '[]') as string[]; }
@@ -72,7 +73,7 @@ function Home() {
         </a>
         <nav className="topnav" aria-label="Main navigation">
           <a href="#homes" className="nav-link active" data-testid="link-browse-homes">Browse homes</a>
-          <a href="#housing-assistant" className="nav-link" data-testid="link-housing-guide">Ask the guide</a>
+          <button type="button" className="nav-link nav-guide-link" onClick={() => setAssistantOpen(true)} data-testid="button-open-guide-nav">Ask the guide</button>
         </nav>
         <button type="button" className={`saved-nav ${savedOnly ? 'selected' : ''}`} onClick={() => setSavedOnly((value) => !value)} data-testid="button-show-saved">
           <Bookmark size={16} fill={savedOnly ? 'currentColor' : 'none'} /> Saved <span>{saved.length}</span>
@@ -141,8 +142,8 @@ function Home() {
             <div className="compare-note" data-testid="text-compare-guidance"><span className="note-mark">i</span><p><strong>A useful reminder:</strong> the cheapest room isn’t always the lowest-cost choice. Check deposits, meals, late-night travel, and what’s included before you decide.</p></div>
             {sortedSavedListings.length > 0 && <div className="saved-summary" data-testid="text-saved-summary"><Bookmark size={15} fill="currentColor" /> You’ve kept {sortedSavedListings.length} {sortedSavedListings.length === 1 ? 'place' : 'places'} on your shortlist. Use Saved above to compare them again.</div>}
           </div>
-          <AssistantPanel listings={listings} onShowListing={showListing} />
         </section>
+        <AssistantPanel listings={listings} onShowListing={showListing} open={assistantOpen} onOpenChange={setAssistantOpen} />
 
         <section className="closing-note" data-testid="panel-next-steps">
           <div className="closing-mark"><Sparkles size={19} /></div>
