@@ -1,6 +1,6 @@
 import { db, studentHousingAgentSettingsTable } from "@workspace/db";
 import type { StudentHousingAgentSettingsRow } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 const SETTINGS_ROW_ID = 1;
 export const EMPATHY_STAGE_COUNT = 5;
@@ -56,37 +56,6 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettingsInput = {
   goal: DEFAULT_GOAL,
 };
 
-// Normally `pnpm --filter db push` (run by scripts/post-merge.sh) creates and
-// upgrades this table. This keeps the admin panel and the assistant working
-// even if a deploy reaches the server before that push has run.
-let tableReady: Promise<void> | null = null;
-function ensureTable(): Promise<void> {
-  if (!tableReady) {
-    tableReady = (async () => {
-      await db.execute(
-        sql`create table if not exists student_housing_agent_settings (
-          id integer primary key,
-          persona text not null,
-          tone text not null,
-          empathy_scale integer not null,
-          goal_orientation_scale integer not null,
-          updated_at timestamptz not null default now()
-        )`,
-      );
-      await db.execute(
-        sql`alter table student_housing_agent_settings add column if not exists empathy_examples jsonb`,
-      );
-      await db.execute(
-        sql`alter table student_housing_agent_settings add column if not exists goal text`,
-      );
-    })().catch((error) => {
-      tableReady = null;
-      throw error;
-    });
-  }
-  return tableReady;
-}
-
 function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
   const saved = Array.isArray(row.empathyExamples) ? row.empathyExamples : null;
   const empathyExamples = Array.from({ length: EMPATHY_STAGE_COUNT }, (_, index) => {
@@ -107,7 +76,6 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
 
 /** Reads the saved settings, creating the row with defaults on first use. */
 export async function getAgentSettings(): Promise<AgentSettings> {
-  await ensureTable();
   await db
     .insert(studentHousingAgentSettingsTable)
     .values({
@@ -131,7 +99,6 @@ export async function getAgentSettings(): Promise<AgentSettings> {
 export async function saveAgentSettings(
   input: AgentSettingsInput,
 ): Promise<AgentSettings> {
-  await ensureTable();
   const [row] = await db
     .insert(studentHousingAgentSettingsTable)
     .values({ id: SETTINGS_ROW_ID, ...input })

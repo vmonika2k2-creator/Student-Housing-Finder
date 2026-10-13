@@ -1,1 +1,2 @@
 - [OpenAI provider choice](openai-provider.md) — The student-housing assistant uses a server-side user key, not Replit-managed AI setup.
+- [Managed PostgreSQL environments](database-environments.md) — Keep `DATABASE_URL` runtime-managed per environment; use development pushes and Publish for schema changes.

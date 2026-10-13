@@ -1,0 +1,62 @@
+PROJECT CONTEXT
+This is "Student Housing Finder" (brand name "room.for"), a pnpm workspace with:
+- artifacts/student-housing: React front end (pages in src/pages, admin page is Admin.tsx)
+- artifacts/api-server: Express API (routes in src/routes/student-housing)
+- lib/db: PostgreSQL with Drizzle
+- lib/api-spec/openapi.yaml: API contract (client and schemas are generated from it)
+Students browse demo rental listings and chat with an AI housing guide that calls OpenAI
+on the server. The GitHub repo is vmonika2k2-creator/Student-Housing-Finder and it is
+connected to this Replit project. The live site is
+https://student-housing-finder--taramonika.replit.app
+
+WHAT WAS BUILT (already merged into main)
+An admin panel at /admin, protected by a password, that lets the admin control how the
+chat agent behaves, with these sections:
+1. Persona (text)
+2. Tone (text)
+3. Empathy scale 0-10, with an example reply to write for each of 5 stages
+   (0-1, 2-3, 4-6, 7-8, 9-10). The stage that matches the slider is highlighted.
+4. Initiative scale 0-10 (passive to goal-oriented), with a "Goal for the conversation" textbox.
+There is also "Save settings" and "Reset to defaults".
+
+HOW IT WORKS
+- Login: POST /api/housing/admin/session checks the ADMIN_PASSWORD secret and sets a
+  signed cookie. GET /api/housing/admin/session checks the cookie.
+- Settings: GET and PUT /api/housing/admin/agent-settings read and save one row (id = 1)
+  in the table student_housing_agent_settings (defined in lib/db/src/schema/agentSettings.ts).
+- Chat: POST /api/housing/assistant loads the saved settings from the database and adds
+  them to the system prompt sent to OpenAI (see artifacts/api-server/src/lib/agentSettings.ts).
+  The settings change style only. They must never override the accuracy and safety rules.
+- The server creates or upgrades the table by itself if it is missing, and it falls back
+  to defaults in the chat if the settings cannot be read.
+
+THE PROBLEM
+On the PUBLISHED site, https://student-housing-finder--taramonika.replit.app/admin,
+sign-in works but the settings page shows "Settings didn't come through" with:
+"HTTP 500: EAI_AGAIN: getaddrinfo EAI_AGAIN helium"
+This means the published server cannot reach its PostgreSQL database. "helium" is the
+development database host, which the published app cannot resolve. The admin panel was
+tested locally and works when the database is reachable, so this is most likely a
+database or deployment setup problem, not a code bug.
+
+WHAT I NEED YOU TO DO
+1. Check that this project has a PostgreSQL database. Create one if it does not.
+2. Make sure the PUBLISHED app has its own working production database and a valid
+   DATABASE_URL, not the development host "helium".
+3. Make sure the table student_housing_agent_settings exists in the production database.
+   Run "pnpm --filter @workspace/db run push" if needed.
+4. Make sure the secrets ADMIN_PASSWORD and OPENAI_API_KEY are set for the published app.
+5. Republish.
+6. Open /admin on the published site, sign in, and confirm that all of these work:
+   - the settings page loads with the persona, tone, five empathy stage boxes, and goal box
+   - changing values and clicking "Save settings" shows "Settings saved"
+   - the values are still there after reloading the page
+7. Then open the home page, click "Ask the guide", send a message, and confirm a normal
+   reply comes back.
+
+RULES
+- Do not change the admin page design or the chat behavior.
+- Do not delete any data.
+- If you must change code, keep the change small and tell me exactly which files you changed.
+- When you finish, explain in simple words what was wrong and what you fixed.
+  If something still fails, give me the exact error text.
