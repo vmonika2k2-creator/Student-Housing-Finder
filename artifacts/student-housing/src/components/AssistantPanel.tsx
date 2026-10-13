@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, ArrowUpRight, LoaderCircle, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { useSendStudentHousingChat, type StudentHousingListing } from '@workspace/api-client-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -10,6 +10,35 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
+// Turns "- point" lines into a real bullet list and leaves other lines as short paragraphs.
+function inlineText(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4
+      ? <strong key={index}>{part.slice(2, -2)}</strong>
+      : part,
+  );
+}
+function ReplyText({ text }: { text: string }) {
+  const blocks: ReactNode[] = [];
+  let items: string[] = [];
+  const flush = () => {
+    if (items.length === 0) return;
+    const list = items;
+    blocks.push(<ul className="reply-list" key={`list-${blocks.length}`}>{list.map((item, index) => <li key={index}>{inlineText(item)}</li>)}</ul>);
+    items = [];
+  };
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) { flush(); continue; }
+    const bullet = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (bullet) { items.push(bullet[1]); continue; }
+    flush();
+    blocks.push(<p className="reply-line" key={`line-${blocks.length}`}>{inlineText(line)}</p>);
+  }
+  flush();
+  return <>{blocks}</>;
+}
+
 const prompts = ['Show me private rooms under ₹15,000', 'What feels easiest for the metro?', 'I want more privacy without a studio budget'];
 
 export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: Props) {
@@ -17,6 +46,17 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const [draft, setDraft] = useState('');
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
+  const endRef = useRef<HTMLDivElement>(null);
+
+  // On wide screens the page makes room for the open panel instead of sitting under it.
+  useEffect(() => {
+    document.body.classList.toggle('assistant-open', open);
+    return () => document.body.classList.remove('assistant-open');
+  }, [open]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages.length, chat.isPending]);
 
   async function sendMessage(value = draft) {
     const message = value.trim();
@@ -48,7 +88,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogTrigger asChild>
         <button type="button" className="assistant-launcher" aria-haspopup="dialog" aria-label="Open the student housing guide" data-testid="button-open-housing-assistant">
           <span className="assistant-launcher-icon"><MessageCircle size={22} /></span>
@@ -60,7 +100,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           <ArrowUpRight className="assistant-launcher-arrow" size={18} />
         </button>
       </DialogTrigger>
-      <DialogContent className="assistant-dialog" data-testid="dialog-housing-assistant">
+      <DialogContent className="assistant-dialog" data-testid="dialog-housing-assistant" onInteractOutside={(event) => event.preventDefault()}>
         <DialogTitle className="sr-only">Talk it through with your housing guide</DialogTitle>
         <DialogDescription className="sr-only">Ask questions and compare the illustrative student homes shown on this page.</DialogDescription>
         <aside className="assistant-panel" id="housing-assistant" data-testid="panel-housing-assistant">
@@ -80,27 +120,29 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
               {messages.map((message, index) => (
                 <div className={`chat-message ${message.role}`} key={`${index}-${message.role}`} data-testid={`message-${message.role}-${index}`}>
                   <span className="message-speaker">{message.role === 'user' ? 'You' : 'Your guide'}</span>
-                  <p>{message.content}</p>
+                  {message.role === 'assistant' ? <ReplyText text={message.content} /> : <p>{message.content}</p>}
                 </div>
               ))}
               {chat.isPending && <div className="chat-message assistant pending-message" data-testid="status-chat-loading"><span className="message-speaker">Your guide</span><p><span className="typing-dots">Thinking through the trade-offs…</span></p></div>}
+            {recommendationListings.length > 0 && (
+              <div className="recommendation-box" data-testid="list-chat-recommendations">
+                <p className="eyebrow">Worth a closer look</p>
+                {recommendationListings.map((listing) => (
+                  <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
+                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo</small></span><ArrowRight size={16} />
+                  </button>
+                ))}
+              </div>
+            )}
+              <div ref={endRef} className="chat-end" aria-hidden="true" />
             </div>
           )}
           {chat.isError && <div className="chat-error" role="alert" data-testid="status-chat-error">That didn’t go through. Check your connection and try again.</div>}
-          {recommendationListings.length > 0 && (
-            <div className="recommendation-box" data-testid="list-chat-recommendations">
-              <p className="eyebrow">Worth a closer look</p>
-              {recommendationListings.map((listing) => (
-                <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                  <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo</small></span><ArrowRight size={16} />
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="quick-prompts">
+          {messages.length === 0 && <div className="quick-prompts">
             <p className="eyebrow">Try asking</p>
             {prompts.map((prompt, index) => <button type="button" key={prompt} data-testid={`button-quick-prompt-${index}`} disabled={chat.isPending || listings.length === 0} onClick={() => void sendMessage(prompt)}>{prompt}<ArrowRight size={13} /></button>)}
-          </div>
+          </div>}
+          <div className="chat-footer">
           <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
             <label htmlFor="chat-input" className="sr-only">Ask about student housing</label>
             <textarea id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
@@ -110,6 +152,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           </form>
           <p className="assistant-footnote">A guide, not a broker. Always check details in person.</p>
           <p className="privacy-note" data-testid="text-chat-privacy"><strong>Privacy note</strong> Messages are sent to OpenAI to generate replies. Please don’t share sensitive personal or financial details.</p>
+          </div>
         </aside>
       </DialogContent>
     </Dialog>
