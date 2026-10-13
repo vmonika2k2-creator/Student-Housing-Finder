@@ -36,6 +36,21 @@ const EMPATHY_EXAMPLE_PLACEHOLDERS = [
   'Example: a reply that fully recognizes the feeling and reassures before helping.',
 ];
 
+const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
+  persona: 'You are a practical, friendly housing guide for students moving to a new city. Help them weigh budget, privacy, shared living, transit, and amenities, and keep the student in charge of the decision.',
+  tone: 'Warm, plain-spoken, and calm. Explain trade-offs without pressure.',
+  empathyScale: 5,
+  goalOrientationScale: 5,
+  empathyExamples: [
+    'Student: "I\'m so stressed about finding a place."\nGuide: "Understood. Here are two options within your budget, with rent and travel time for each."',
+    'Student: "I\'m so stressed about finding a place."\nGuide: "Moving is stressful. Here are two options that fit your budget and travel time."',
+    'Student: "I\'m so stressed about finding a place."\nGuide: "That\'s a lot to juggle, and feeling unsure is normal. Let\'s start with your budget and how far you\'re happy to travel."',
+    'Student: "I\'m so stressed about finding a place."\nGuide: "That sounds really stressful, and I\'m sorry it\'s weighing on you. Let\'s take it one step at a time, starting with what matters most to you."',
+    'Student: "I\'m so stressed about finding a place."\nGuide: "I can hear how overwhelming this feels, and it makes complete sense to be anxious about a move like this. You\'re not behind. We\'ll go at your pace, and I\'ll help you feel sure about each choice."',
+  ],
+  goal: 'Help the student narrow down to two or three homes they would be happy to visit.',
+};
+
 function empathyStageFor(value: number) {
   const index = EMPATHY_STAGES.findIndex((stage) => value >= stage.min && value <= stage.max);
   return index === -1 ? 2 : index;
@@ -205,6 +220,7 @@ function SettingsEditor({
     try {
       const saved = await update.mutateAsync({ data: values });
       form.reset(toFormValues(saved));
+      setResetNote(false);
       queryClient.setQueryData(getGetHousingAdminAgentSettingsQueryKey(), saved);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetHousingAdminAgentSettingsQueryKey() }),
@@ -220,6 +236,18 @@ function SettingsEditor({
   const goalOrientation = watch('goalOrientationScale');
   const empathyStage = empathyStageFor(empathy);
   const goalText = watch('goal') ?? '';
+  const [resetNote, setResetNote] = useState(false);
+
+  function resetToDefaults() {
+    const options = { shouldDirty: true, shouldValidate: true } as const;
+    setValue('persona', DEFAULT_SETTINGS.persona, options);
+    setValue('tone', DEFAULT_SETTINGS.tone, options);
+    setValue('empathyScale', DEFAULT_SETTINGS.empathyScale, options);
+    setValue('goalOrientationScale', DEFAULT_SETTINGS.goalOrientationScale, options);
+    setValue('empathyExamples', [...DEFAULT_SETTINGS.empathyExamples], options);
+    setValue('goal', DEFAULT_SETTINGS.goal, options);
+    setResetNote(true);
+  }
 
   return (
     <div className="admin-settings-page">
@@ -247,7 +275,7 @@ function SettingsEditor({
         </section>
 
         {settings.isLoading && <div className="admin-loading-card" aria-label="Loading guide settings" data-testid="status-admin-settings-loading"><div className="admin-skeleton skeleton-heading" /><div className="admin-skeleton skeleton-copy" /><div className="admin-skeleton skeleton-copy short" /><div className="admin-skeleton skeleton-panel" /><div className="admin-skeleton skeleton-panel" /></div>}
-        {settings.isError && <section className="admin-error-card" role="alert" data-testid="status-admin-settings-error"><div className="error-mark"><RotateCcw size={18} /></div><h2>Settings didn’t come through.</h2><p>We couldn’t load the guide configuration. Your current work hasn’t been changed.</p><button type="button" className="admin-secondary-button" onClick={() => void settings.refetch()} data-testid="button-retry-admin-settings">Try loading again <ArrowRight size={15} /></button></section>}
+        {settings.isError && <section className="admin-error-card" role="alert" data-testid="status-admin-settings-error"><div className="error-mark"><RotateCcw size={18} /></div><h2>Settings didn’t come through.</h2><p>We couldn’t load the guide configuration. Your current work hasn’t been changed.</p>{settings.error instanceof Error && settings.error.message && <p className="admin-error-detail" data-testid="text-admin-settings-error-detail">Reason: {settings.error.message}</p>}<button type="button" className="admin-secondary-button" onClick={() => void settings.refetch()} data-testid="button-retry-admin-settings">Try loading again <ArrowRight size={15} /></button></section>}
 
         {!settings.isLoading && !settings.isError && settings.data && (
           <Form {...form}>
@@ -352,10 +380,12 @@ function SettingsEditor({
                 <h2>Shape the next conversation.</h2>
                 <p>These choices guide how the assistant helps students compare their options.</p>
                 {settings.data.updatedAt && <div className="updated-line"><span>Last saved</span><time dateTime={settings.data.updatedAt} data-testid="text-admin-settings-updated">{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(settings.data.updatedAt))}</time></div>}
-                <button type="submit" className="admin-primary-button save-button" disabled={update.isPending || (!isDirty && !saveError)} data-testid="button-save-admin-settings">
+                <button type="submit" className="admin-primary-button admin-save-button" disabled={update.isPending || (!isDirty && !saveError)} data-testid="button-save-admin-settings">
                   {update.isPending ? <><LoaderCircle className="admin-spin" size={16} /> Saving changes</> : <><Save size={16} /> Save settings</>}
                 </button>
-                {isDirty && !update.isPending && <p className="unsaved-note" data-testid="status-admin-unsaved">Unsaved changes</p>}
+                <button type="button" className="admin-secondary-button reset-defaults-button" onClick={resetToDefaults} disabled={update.isPending} data-testid="button-reset-admin-defaults"><RotateCcw size={14} /> Reset to defaults</button>
+                {resetNote && <p className="unsaved-note" data-testid="status-admin-reset-note">Defaults loaded. Press Save settings to apply them.</p>}
+                {isDirty && !resetNote && !update.isPending && <p className="unsaved-note" data-testid="status-admin-unsaved">Unsaved changes</p>}
                 {saveError && <p className="admin-form-error save-error" role="alert" data-testid="status-admin-save-error">{saveError}</p>}
                 {update.isSuccess && !isDirty && !saveError && <p className="save-success" role="status" data-testid="status-admin-save-success"><Check size={14} /> Settings saved</p>}
               </div>
