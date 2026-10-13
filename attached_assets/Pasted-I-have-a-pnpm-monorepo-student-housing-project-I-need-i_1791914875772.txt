@@ -1,0 +1,98 @@
+I have a pnpm monorepo student housing project. I need it running on Replit 
+with a hosted PostgreSQL database and admin-managed API keys.
+
+## PROJECT STRUCTURE
+
+- Monorepo with pnpm workspaces
+- artifacts/api-server — Node.js + Express 5 API (TypeScript)
+- artifacts/student-housing — React + Vite frontend (TypeScript)
+- lib/db — PostgreSQL + Drizzle ORM
+- lib/agentSettings.ts — admin settings logic
+- Uses OpenAI SDK (gpt-5-mini) for the chatbot
+
+## WHAT I NEED
+
+### 1. Replit configuration
+
+Create a `.replit` file at the root that:
+- Uses Node.js 20+
+- Installs pnpm if missing
+- Runs `pnpm install` on start
+- Starts the API server on port 3000 (or Replit's assigned PORT)
+- Starts the frontend on a second port (or serves it as static)
+- Exposes both ports publicly
+
+If Replit can only expose one port cleanly, serve the built frontend from 
+the Express API (static files) so everything runs on ONE port.
+
+### 2. PostgreSQL database
+
+- Use Replit's built-in PostgreSQL (Database tab) if available
+- Otherwise configure a connection string via Secrets
+- Add DATABASE_URL to Replit Secrets
+- Run `pnpm --filter @workspace/db run push` after DB is provisioned
+
+### 3. Replit Secrets (environment variables)
+
+Add these to Replit Secrets (NOT in code):
+- DATABASE_URL (from Replit Postgres or Neon)
+- ADMIN_PASSWORD (for admin panel login)
+- API_KEY_ENCRYPTION_SECRET (32-byte hex for encrypting stored API keys)
+
+Do NOT put OPENAI_API_KEY in Secrets. The admin will enter LLM keys in the 
+admin panel at runtime.
+
+### 4. Build the admin-managed API keys feature (if not already done)
+
+Schema: api_keys table
+  id, provider, label, encrypted_value, iv, auth_tag, is_active, 
+  created_at, last_used_at, last_error
+
+Endpoints (in admin.ts, behind requireAdmin):
+  GET    /admin/api-keys
+  POST   /admin/api-keys
+  POST   /admin/api-keys/:id/test
+  POST   /admin/api-keys/:id/activate
+  DELETE /admin/api-keys/:id
+
+Encryption: AES-256-GCM using API_KEY_ENCRYPTION_SECRET.
+
+Runtime: /housing/assistant loads the active key, decrypts in memory, uses it.
+
+Admin UI: new "API Keys" tab in Admin.tsx.
+
+### 5. Fix Windows/Unix shell issues
+
+The preinstall script currently uses `sh -c`. On Replit (Linux) this works, 
+but make it cross-platform anyway using a Node.js inline script:
+  node -e "..."
+
+### 6. Steps to run
+
+Give me exact commands to run in the Replit Shell, in order:
+1. Install dependencies
+2. Run migration
+3. Start API
+4. Start frontend
+
+And tell me which port each runs on so I can open the preview.
+
+### 7. Post-deploy test plan
+
+1. Open the frontend URL
+2. Send 3 test messages to the chatbot (casual, neutral, formal)
+3. Open /admin, log in with ADMIN_PASSWORD
+4. Go to "API Keys" tab, add OpenAI key, click Test
+5. Go back to chatbot, verify replies work
+6. Go to "Conversation Log" tab, verify entries appear
+7. Flag one good, one bad
+8. Export CSV
+
+## CONSTRAINTS
+
+- Do NOT ask me for DATABASE_URL — use Replit's built-in Postgres if available
+- Do NOT ask me for OPENAI_API_KEY — admin enters it in the UI
+- Work in small increments. If you hit output limits, say "continue"
+- Show me exact file paths and exact commands
+
+Start with the .replit file and Replit Secrets setup.
