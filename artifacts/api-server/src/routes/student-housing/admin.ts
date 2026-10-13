@@ -83,7 +83,17 @@ router.get("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
     res.json(GetHousingAdminAgentSettingsResponse.parse(settings));
   } catch (error) {
     req.log.error({ err: error }, "Could not load agent settings");
-    res.status(500).json({ error: "Settings could not be loaded." });
+    // Only reachable with a valid admin session, so a short technical reason is safe to show.
+    // The database library wraps the real failure in `cause`, so look there first.
+    const root = (error as { cause?: unknown })?.cause ?? error;
+    const code = (root as { code?: unknown })?.code;
+    const reason = root instanceof Error && root.message
+      ? root.message.split("\n")[0].slice(0, 160)
+      : "Unknown error";
+    res.status(500).json({
+      error: "Settings could not be loaded.",
+      detail: `${typeof code === "string" ? `${code}: ` : ""}${reason}`,
+    });
   }
 });
 

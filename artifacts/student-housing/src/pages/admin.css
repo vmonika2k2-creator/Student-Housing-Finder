@@ -118,7 +118,7 @@
 .save-rail-card > p:not(.admin-eyebrow) { margin: 0; color: #7f867b; font-size: 9px; line-height: 1.65; }
 .updated-line { display: flex; flex-direction: column; gap: 4px; margin: 17px 0; padding: 12px 0; border-top: 1px solid #eae8df; border-bottom: 1px solid #eae8df; color: #92968b; font-size: 8px; }
 .updated-line time { color: #5e735f; font-size: 9px; font-weight: 600; }
-.save-button { width: 100%; }
+.admin-save-button { width: 100%; }
 .unsaved-note { margin: 10px 0 0 !important; color: #a9654e !important; text-align: center; font-size: 8px !important; }
 .save-error { margin-bottom: 0; }
 .save-success { display: flex; justify-content: center; align-items: center; gap: 5px; margin: 10px 0 0 !important; color: #5d8064 !important; text-align: center; font-size: 9px !important; }
@@ -168,7 +168,7 @@
   .admin-save-rail { position: static; padding: 0 0 22px 54px; }
   .save-rail-card { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; }
   .save-rail-icon { grid-row: span 2; margin: 0; }
-  .save-rail-card > .admin-eyebrow, .save-rail-card > h2, .save-rail-card > p:not(.admin-eyebrow), .updated-line, .save-button, .unsaved-note, .save-error, .save-success { grid-column: 2; }
+  .save-rail-card > .admin-eyebrow, .save-rail-card > h2, .save-rail-card > p:not(.admin-eyebrow), .updated-line, .admin-save-button, .reset-defaults-button, .unsaved-note, .save-error, .save-success { grid-column: 2; }
   .save-rail-card > .admin-eyebrow { align-self: center; }
   .save-rail-card h2 { margin-top: 4px; }
   .student-note { margin-top: 10px; }
@@ -223,3 +223,6 @@
 @media (max-width: 640px) {
   .stage-head { flex-direction: column; gap: 3px; }
 }
+
+.reset-defaults-button { width: 100%; margin-top: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.admin-error-detail { margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: #f6ece7; color: #8a4a3c; font: 500 10px/1.55 ui-monospace, Menlo, monospace; word-break: break-word; }
