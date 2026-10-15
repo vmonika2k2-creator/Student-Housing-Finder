@@ -152,6 +152,12 @@
 .sparkle { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 7px; color: #a66c4f; background: #f2e4d5; }
 .assistant-welcome p { margin: 10px 0 8px; color: #3f5143; font: 500 15px/1.55 var(--app-font-sans); }
 .assistant-note { color: #6f786b; font-size: 12px; line-height: 1.5; }
+.chat-name-form { display: grid; gap: 7px; margin: 14px 0; color: #34463a; font-size: 12px; font-weight: 700; }
+.chat-name-form > div { display: flex; gap: 7px; }
+.chat-name-form input { flex: 1; min-width: 0; padding: 11px; border: 1px solid #d5ddd1; border-radius: 7px; background: #fffef9; font-size: 14px; }
+.chat-name-form button { width: 42px; display: grid; place-items: center; border: 0; border-radius: 7px; background: #39634e; color: white; }
+.chat-name-form button:disabled { opacity: .45; }
+.chat-name-form small { color: #778174; font-size: 10px; font-weight: 400; line-height: 1.45; }
 .quick-prompts { margin: 16px 0 14px; }
 .quick-prompts > .eyebrow { margin: 0 0 8px; color: #727b6e; font-size: 10px; }
 .quick-prompts button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; padding: 11px 12px; border: 1px solid #dce2d6; border-radius: 8px; background: #f6f7ef; color: #3f5143; text-align: left; font-size: 13px; cursor: pointer; transition: border-color .18s ease, background .18s ease; }
@@ -183,6 +189,21 @@
 .chat-footer { position: sticky; bottom: -18px; z-index: 2; margin: auto -22px -18px; padding: 10px 22px 14px; background: #edf1e8; box-shadow: 0 -10px 14px -10px #1f352b26; }
 .recommendation-box { margin: 2px 0 0; padding: 12px 14px; border-radius: 10px; background: #f7f7ee; }
 .recommendation-box .eyebrow { margin: 0 0 6px; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.chat-listing-table-scroll { overflow-x: auto; }
+.chat-listing-table { width: 100%; min-width: 465px; border-collapse: collapse; color: #34463a; font-size: 11px; }
+.chat-listing-table th, .chat-listing-table td { padding: 8px 7px; border-top: 1px solid #e2e5dc; text-align: left; vertical-align: top; line-height: 1.4; }
+.chat-listing-table th { color: #72806e; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.chat-listing-table td small { display: block; margin-top: 3px; color: #768073; font-size: 9px; }
+.chat-table-home { border: 0; padding: 0; background: transparent; color: #39634e; font-size: 11px; font-weight: 800; text-align: left; cursor: pointer; }
+.chat-option-details { margin-top: 9px; border-top: 1px solid #e2e5dc; }
+.chat-option-details summary { padding: 9px 0 2px; color: #52715a; font-size: 10px; font-weight: 700; cursor: pointer; }
+.chat-next-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; }
+.chat-next-actions > span { flex-basis: 100%; color: #748071; font-size: 10px; font-weight: 700; }
+.chat-next-actions button, .chat-ended button { padding: 7px 9px; border: 1px solid #d5ddd1; border-radius: 6px; background: #fffef9; color: #45634e; font-size: 10px; font-weight: 700; cursor: pointer; }
+.chat-next-actions button:hover, .chat-ended button:hover { background: #e7ede2; }
+.chat-ended { display: grid; gap: 8px; margin: 12px 0; padding: 12px; border: 1px solid #d9e1d5; border-radius: 8px; background: #f7f7ee; color: #34463a; font-size: 12px; }
+.chat-ended > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.chat-ended .chat-new-search { justify-self: start; background: #39634e; color: white; }
 .recommendation-link { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border: 0; border-top: 1px solid #e8eadf; background: transparent; color: #3f6049; text-align: left; cursor: pointer; }
 .recommendation-option { border-top: 1px solid #e8eadf; }
 .recommendation-option .recommendation-link { border-top: 0; }

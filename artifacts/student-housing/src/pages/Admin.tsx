@@ -12,13 +12,62 @@ import {
   useUpdateHousingAdminAgentSettings,
 } from '@workspace/api-client-react';
 import type { StudentHousingAgentSettingsInput } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, Check, Compass, KeyRound, LoaderCircle, LockKeyhole, LogOut, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Sparkles, Plus, Trash2, Pencil } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Compass, KeyRound, LoaderCircle, LockKeyhole, LogOut, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Sparkles, Plus, Trash2, Pencil, MessageSquareText, RefreshCw } from 'lucide-react';
 import { Link } from 'wouter';
 import './admin.css';
 
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+type ConversationSummary = { id: string; studentName: string; startedAt: string; lastActiveAt: string; messageCount: number; lastMessage: string; status: string; feedback: string | null };
+type ConversationDetail = ConversationSummary & { messages: { role: 'user' | 'assistant'; content: string }[] };
+
+function ConversationAnalytics() {
+  const [rows, setRows] = useState<ConversationSummary[]>([]);
+  const [selected, setSelected] = useState<ConversationDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [filter, setFilter] = useState('');
+
+  async function loadRows() {
+    setLoading(true); setError('');
+    try {
+      const response = await fetch('/api/housing/admin/conversations', { credentials: 'include' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Conversation history could not be loaded.');
+      setRows(result.conversations ?? []);
+    } catch (cause) { setError(errorMessage(cause, 'Conversation history could not be loaded.')); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { void loadRows(); }, []);
+
+  async function viewConversation(id: string) {
+    setError('');
+    try {
+      const response = await fetch(`/api/housing/admin/conversations/${encodeURIComponent(id)}`, { credentials: 'include' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Conversation details could not be loaded.');
+      setSelected(result);
+    } catch (cause) { setError(errorMessage(cause, 'Conversation details could not be loaded.')); }
+  }
+
+  const visibleRows = rows.filter((row) => `${row.studentName} ${row.lastMessage} ${row.status} ${row.feedback ?? ''}`.toLowerCase().includes(filter.toLowerCase()));
+  const endedCount = rows.filter((row) => row.status === 'Ended').length;
+  const ratedCount = rows.filter((row) => row.feedback).length;
+  const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+
+  return <section className="conversation-analytics" aria-labelledby="conversation-analytics-title">
+    <div className="conversation-analytics-heading"><div><p className="admin-eyebrow"><MessageSquareText size={13} /> STUDENT CONVERSATIONS</p><h2 id="conversation-analytics-title">Chat activity</h2><p>Review recent conversations and student feedback to understand what is helping.</p></div><button type="button" className="admin-secondary-button" onClick={() => void loadRows()} disabled={loading}><RefreshCw size={14} /> Refresh</button></div>
+    <div className="conversation-stats"><div><strong>{rows.length}</strong><span>Recent chats</span></div><div><strong>{endedCount}</strong><span>Ended</span></div><div><strong>{ratedCount}</strong><span>Feedback received</span></div></div>
+    {error && <p className="admin-form-error" role="alert">{error}</p>}
+    {selected && <div className="conversation-detail"><div className="conversation-detail-heading"><div><strong>{selected.studentName}</strong><span>{formatDate(selected.startedAt)} · {selected.messages.length} messages{selected.feedback ? ` · ${selected.feedback}` : ''}</span></div><button type="button" className="admin-secondary-button" onClick={() => setSelected(null)}>Close chat</button></div><div className="conversation-transcript">{selected.messages.map((message, index) => <div className={`transcript-message ${message.role}`} key={`${index}-${message.role}`}><strong>{message.role === 'user' ? selected.studentName : 'Guide'}</strong><p>{message.content}</p></div>)}</div></div>}
+    <label className="conversation-search">Filter chats<input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Name, message, status, feedback" /></label>
+    <div className="conversation-table-scroll"><table className="conversation-table"><thead><tr><th>Student</th><th>Started</th><th>Messages</th><th>Last message</th><th>Status</th><th>Feedback</th><th></th></tr></thead><tbody>{loading ? <tr><td colSpan={7}>Loading conversations…</td></tr> : visibleRows.length === 0 ? <tr><td colSpan={7}>No conversations match this filter yet.</td></tr> : visibleRows.map((row) => <tr key={row.id}><td>{row.studentName}</td><td>{formatDate(row.startedAt)}</td><td>{row.messageCount}</td><td>{row.lastMessage || '—'}</td><td><span className={`conversation-status ${row.status.toLowerCase().replace(/\s+/g, '-')}`}>{row.status}</span></td><td>{row.feedback ?? 'Not rated'}</td><td><button type="button" className="conversation-view-button" onClick={() => void viewConversation(row.id)}>View chat</button></td></tr>)}</tbody></table></div>
+    <p className="conversation-privacy-note">Chat content includes the name and messages students shared. Use this view for service analysis and keep access limited to admins.</p>
+  </section>;
 }
 
 const EMPATHY_STAGES = [
@@ -520,6 +569,7 @@ function SettingsEditor({
           </Form>
         )}
       </main>
+      <div className="admin-main"><ConversationAnalytics /></div>
       <footer className="admin-footer"><span>room<span className="brand-dot">.</span>for</span><span>Practical guidance for the move ahead.</span></footer>
     </div>
   );
