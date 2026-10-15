@@ -45,6 +45,8 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
+  const [moveInUrgency, setMoveInUrgency] = useState<'flexible' | 'soon' | 'urgent'>('flexible');
+  const [responseEmpathy, setResponseEmpathy] = useState(6);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
@@ -69,6 +71,8 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
       const response = await chat.mutateAsync({
         data: {
           conversationId,
+          moveInUrgency,
+          responseEmpathy,
           message,
           history: messages.map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),
@@ -123,6 +127,10 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
             <div><p className="eyebrow">A little help, right here</p><h2>Talk it through</h2></div>
             <span className="online-dot" aria-label="Assistant ready" />
           </div>
+          <div className="assistant-preferences" data-testid="panel-assistant-preferences">
+            <label>Move-in timing<select value={moveInUrgency} onChange={(event) => setMoveInUrgency(event.target.value as 'flexible' | 'soon' | 'urgent')}><option value="flexible">Flexible</option><option value="soon">Within a month</option><option value="urgent">As soon as possible</option></select></label>
+            <label>Response empathy <span>{responseEmpathy}/10</span><input type="range" min="1" max="10" value={responseEmpathy} onChange={(event) => setResponseEmpathy(Number(event.target.value))} aria-label="Response empathy level" /></label>
+          </div>
           {messages.length === 0 ? (
             <div className="assistant-welcome" data-testid="text-assistant-intro">
               <span className="sparkle"><Sparkles size={16} /></span>
@@ -143,7 +151,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
                 <p className="eyebrow">Worth a closer look</p>
                 {recommendationListings.map((listing) => (
                   <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo</small></span><ArrowRight size={16} />
+                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo · {listing.transitMinutes} min to transit</small><small>Why it may fit: {listing.furnished ? 'furnished' : 'unfurnished'} {listing.roomType.toLowerCase()}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}.</small></span><ArrowRight size={16} />
                   </button>
                 ))}
               </div>

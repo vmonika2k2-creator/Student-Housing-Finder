@@ -52,6 +52,8 @@ export const sendStudentHousingChatBodyListingIdsMax = 20;
 
 export const SendStudentHousingChatBody = zod.object({
   "conversationId": zod.string().uuid().optional(),
+  "moveInUrgency": zod.enum(['flexible', 'soon', 'urgent']).optional(),
+  "responseEmpathy": zod.number().int().min(1).max(10).optional(),
   "message": zod.string().min(1).max(sendStudentHousingChatBodyMessageMax),
   "history": zod.array(zod.object({
   "role": zod.enum(['user', 'assistant']),
@@ -137,6 +139,7 @@ export const GetHousingAdminAgentSettingsResponse = zod.object({
   "knowledgeRules": zod.string().max(5000).default(''),
   "ctaSettings": zod.string().max(2000).default(''),
   "feedbackSettings": zod.string().max(2000).default(''),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string().max(100), url: zod.string().url().max(1000) })).max(20).default([]),
   "updatedAt": zod.coerce.date()
 })
 
@@ -175,7 +178,8 @@ export const UpdateHousingAdminAgentSettingsBody = zod.object({
   "handoverRules": zod.string().max(5000).optional().default(''),
   "knowledgeRules": zod.string().max(5000).optional().default(''),
   "ctaSettings": zod.string().max(2000).optional().default(''),
-  "feedbackSettings": zod.string().max(2000).optional().default('')
+  "feedbackSettings": zod.string().max(2000).optional().default(''),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string().min(1).max(100), url: zod.string().url().max(1000) })).max(20).optional().default([])
 })
 
 export const updateHousingAdminAgentSettingsResponsePersonaMax = 1000;
@@ -210,6 +214,7 @@ export const UpdateHousingAdminAgentSettingsResponse = zod.object({
   "knowledgeRules": zod.string().max(5000),
   "ctaSettings": zod.string().max(2000),
   "feedbackSettings": zod.string().max(2000),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string(), url: zod.string().url() })).max(20),
   "updatedAt": zod.coerce.date()
 })
 

@@ -23,6 +23,7 @@ export const studentHousingAgentSettingsTable = pgTable(
     knowledgeRules: text("knowledge_rules"),
     ctaSettings: text("cta_settings"),
     feedbackSettings: text("feedback_settings"),
+    integrations: jsonb("integrations").$type<Array<{ id: string; type: "api" | "mcp"; label: string; url: string }>>(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

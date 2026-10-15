@@ -8,3 +8,6 @@ ALTER TABLE student_housing_agent_settings
   ADD COLUMN IF NOT EXISTS knowledge_rules text,
   ADD COLUMN IF NOT EXISTS cta_settings text,
   ADD COLUMN IF NOT EXISTS feedback_settings text;
+
+ALTER TABLE student_housing_agent_settings
+  ADD COLUMN IF NOT EXISTS integrations jsonb;

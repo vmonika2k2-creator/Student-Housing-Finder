@@ -45,4 +45,5 @@ export interface StudentHousingAgentSettingsInput {
   knowledgeRules: string;
   ctaSettings: string;
   feedbackSettings: string;
+  integrations: Array<{ id: string; type: 'api' | 'mcp'; label: string; url: string }>;
 }

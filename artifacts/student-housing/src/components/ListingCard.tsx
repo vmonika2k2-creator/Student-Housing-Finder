@@ -38,8 +38,12 @@ export function ListingCard({ listing, saved, onToggleSaved, recommended = false
         <div className="amenity-row" data-testid={`list-amenities-${listing.id}`}>
           {listing.amenities.slice(0, 3).map((amenity) => <span key={amenity}><Wifi size={13} />{amenity}</span>)}
         </div>
-        <button className="card-link" type="button" data-testid={`button-view-${listing.id}`} onClick={() => document.getElementById(`listing-${listing.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>
-          Keep this one in mind <ArrowUpRight size={16} />
+        <details className="listing-why">
+          <summary>Why consider it?</summary>
+          <p>{listing.furnished ? 'Furnished' : 'Unfurnished'} {listing.roomType.toLowerCase()} at ₹{rupees(listing.monthlyRent)}/month, {listing.transitMinutes} minutes from transit{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}. Compare these listed details with your priorities.</p>
+        </details>
+        <button className="card-link" type="button" data-testid={`button-view-${listing.id}`} onClick={() => onToggleSaved(listing.id)}>
+          {saved ? 'Remove from shortlist' : 'Add to shortlist'} <ArrowUpRight size={16} />
         </button>
       </div>
     </article>

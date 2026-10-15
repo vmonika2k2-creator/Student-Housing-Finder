@@ -57,6 +57,8 @@ export interface StudentHousingChatMessage {
 export interface StudentHousingChatInput {
   /** Stable identifier used to correlate configuration versions for this conversation. */
   conversationId?: string;
+  moveInUrgency?: 'flexible' | 'soon' | 'urgent';
+  responseEmpathy?: number;
   /**
      * @minLength 1
      * @maxLength 1200
@@ -119,6 +121,7 @@ export interface StudentHousingAgentSettings {
   knowledgeRules: string;
   ctaSettings: string;
   feedbackSettings: string;
+  integrations: Array<{ id: string; type: 'api' | 'mcp'; label: string; url: string }>;
   updatedAt: string;
 }
 
@@ -161,5 +164,6 @@ export interface StudentHousingAgentSettingsInput {
   knowledgeRules: string;
   ctaSettings: string;
   feedbackSettings: string;
+  integrations: Array<{ id: string; type: 'api' | 'mcp'; label: string; url: string }>;
 }
 

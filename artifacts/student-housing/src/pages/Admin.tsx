@@ -12,7 +12,7 @@ import {
   useUpdateHousingAdminAgentSettings,
 } from '@workspace/api-client-react';
 import type { StudentHousingAgentSettingsInput } from '@workspace/api-client-react';
-import { ArrowLeft, ArrowRight, Check, Compass, KeyRound, LoaderCircle, LockKeyhole, LogOut, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Compass, KeyRound, LoaderCircle, LockKeyhole, LogOut, RotateCcw, Save, ShieldCheck, SlidersHorizontal, Sparkles, Plus, Trash2, Pencil } from 'lucide-react';
 import { Link } from 'wouter';
 import './admin.css';
 
@@ -55,6 +55,7 @@ const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
   knowledgeRules: 'Use supplied property data only. State when information is missing or uncertain. Never invent nearby services, distances, menus, availability, safety arrangements or policies.',
   ctaSettings: 'Offer one relevant next step: view details, compare properties, schedule a visit, request owner callback, show a nearby map, save a shortlist, or talk to a human.',
   feedbackSettings: 'After fulfilling the request, acknowledge briefly and ask how helpful the conversation was: Very helpful, Somewhat helpful, or Not helpful.',
+  integrations: [],
 };
 
 function empathyStageFor(value: number) {
@@ -76,6 +77,7 @@ function toFormValues(settings: StudentHousingAgentSettingsInput): StudentHousin
     knowledgeRules: settings.knowledgeRules ?? DEFAULT_SETTINGS.knowledgeRules,
     ctaSettings: settings.ctaSettings ?? DEFAULT_SETTINGS.ctaSettings,
     feedbackSettings: settings.feedbackSettings ?? DEFAULT_SETTINGS.feedbackSettings,
+    integrations: settings.integrations ?? [],
   };
 }
 
@@ -227,6 +229,10 @@ function SettingsEditor({
   const [testReply, setTestReply] = useState('');
   const [testError, setTestError] = useState('');
   const [testLoading, setTestLoading] = useState(false);
+  const [integrationType, setIntegrationType] = useState<'api' | 'mcp'>('api');
+  const [integrationLabel, setIntegrationLabel] = useState('');
+  const [integrationUrl, setIntegrationUrl] = useState('');
+  const [editingIntegrationId, setEditingIntegrationId] = useState('');
 
   useEffect(() => {
     if (settings.data) {
@@ -285,7 +291,20 @@ function SettingsEditor({
   const goalOrientation = watch('goalOrientationScale');
   const empathyStage = empathyStageFor(empathy);
   const goalText = watch('goal') ?? '';
+  const integrations = watch('integrations') ?? [];
   const [resetNote, setResetNote] = useState(false);
+
+  function saveIntegration() {
+    const label = integrationLabel.trim();
+    const url = integrationUrl.trim();
+    if (!label || !/^https:\/\//i.test(url)) return;
+    const entry = { id: editingIntegrationId || crypto.randomUUID(), type: integrationType, label, url };
+    const next = editingIntegrationId
+      ? integrations.map((item) => item.id === editingIntegrationId ? entry : item)
+      : [...integrations, entry];
+    setValue('integrations', next, { shouldDirty: true, shouldValidate: true });
+    setIntegrationLabel(''); setIntegrationUrl(''); setEditingIntegrationId('');
+  }
 
   function resetToDefaults() {
     const options = { shouldDirty: true, shouldValidate: true } as const;
@@ -301,6 +320,7 @@ function SettingsEditor({
     setValue('knowledgeRules', DEFAULT_SETTINGS.knowledgeRules, options);
     setValue('ctaSettings', DEFAULT_SETTINGS.ctaSettings, options);
     setValue('feedbackSettings', DEFAULT_SETTINGS.feedbackSettings, options);
+    setValue('integrations', [], options);
     setResetNote(true);
   }
 
@@ -445,6 +465,28 @@ function SettingsEditor({
                   </div>
                 </section>
               ))}
+              <section className="editor-section" aria-labelledby="integrations-title">
+                <div className="section-number">10</div>
+                <div className="section-body">
+                  <div className="editor-section-heading"><div><p className="admin-eyebrow">CONNECTED RESOURCES</p><h2 id="integrations-title">API and MCP links</h2></div></div>
+                  <p className="editor-intro">Save reference links for your team. These links are managed here; adding a link does not authorize API calls or connect an MCP server.</p>
+                  <div className="integration-form">
+                    <label className="admin-label" htmlFor="integration-type">Type</label>
+                    <select id="integration-type" value={integrationType} onChange={(event) => setIntegrationType(event.target.value as 'api' | 'mcp')}><option value="api">API</option><option value="mcp">MCP</option></select>
+                    <label className="admin-label" htmlFor="integration-label">Name</label>
+                    <input id="integration-label" value={integrationLabel} onChange={(event) => setIntegrationLabel(event.target.value)} maxLength={100} placeholder="Housing listings API" />
+                    <label className="admin-label" htmlFor="integration-url">Link (HTTPS)</label>
+                    <input id="integration-url" type="url" value={integrationUrl} onChange={(event) => setIntegrationUrl(event.target.value)} maxLength={1000} placeholder="https://…" />
+                    <button type="button" className="admin-secondary-button" onClick={saveIntegration} disabled={!integrationLabel.trim() || !/^https:\/\//i.test(integrationUrl.trim())}><Plus size={14} /> {editingIntegrationId ? 'Update link' : 'Add link'}</button>
+                    {editingIntegrationId && <button type="button" className="admin-secondary-button" onClick={() => { setEditingIntegrationId(''); setIntegrationLabel(''); setIntegrationUrl(''); }}>Cancel edit</button>}
+                  </div>
+                  <ul className="integration-list">{integrations.map((item) => <li key={item.id}>
+                    <span><strong>{item.type.toUpperCase()} · {item.label}</strong><a href={item.url} target="_blank" rel="noreferrer">{item.url}</a></span>
+                    <button type="button" className="admin-secondary-button" aria-label={`Edit ${item.label}`} onClick={() => { setEditingIntegrationId(item.id); setIntegrationType(item.type); setIntegrationLabel(item.label); setIntegrationUrl(item.url); }}><Pencil size={14} /> Edit</button>
+                    <button type="button" className="admin-secondary-button" aria-label={`Delete ${item.label}`} onClick={() => setValue('integrations', integrations.filter((entry) => entry.id !== item.id), { shouldDirty: true })}><Trash2 size={14} /> Delete</button>
+                  </li>)}</ul>
+                </div>
+              </section>
 
             <aside className="admin-save-rail">
               <div className="save-rail-card">

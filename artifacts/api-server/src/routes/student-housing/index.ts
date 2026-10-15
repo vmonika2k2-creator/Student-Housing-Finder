@@ -46,6 +46,8 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
   }
 
   const { message, history, listingIds } = parsedBody.data;
+  const moveInUrgency = parsedBody.data.moveInUrgency ?? "flexible";
+  const responseEmpathy = parsedBody.data.responseEmpathy ?? 6;
   const availableListings = sampleListings.filter((listing) =>
     listingIds.includes(listing.id),
   );
@@ -97,6 +99,10 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
         {
           role: "system",
           content: `Sample listings the website currently shows: ${JSON.stringify(availableListings)}`,
+        },
+        {
+          role: "system",
+          content: `Student-selected controls: move-in urgency is ${moveInUrgency}; response empathy is ${responseEmpathy}/10. Adapt prioritization and tone to these preferences.`,
         },
         ...history.map((entry) => ({
           role: entry.role,

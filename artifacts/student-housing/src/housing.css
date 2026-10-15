@@ -271,3 +271,20 @@ body { transition: padding-right .2s ease; }
 }
 
 .chat-end { height: 1px; scroll-margin-bottom: 210px; }
+.assistant-preferences { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; padding: 10px 12px; border: 1px solid #d9e1d5; border-radius: 8px; background: #f8f8f1; }
+.assistant-preferences label { display: grid; gap: 5px; color: #536252; font-size: 11px; font-weight: 700; }
+.assistant-preferences select { min-height: 34px; padding: 5px 8px; border: 1px solid #d5ddd1; border-radius: 5px; background: white; color: #34463a; }
+.assistant-preferences input[type="range"] { width: 100%; accent-color: #39634e; }
+.assistant-preferences label span { font-weight: 500; }
+.listing-why { margin: 12px 0; padding: 9px 10px; border-radius: 7px; background: #f4f5ed; color: #4d5e50; font-size: 12px; line-height: 1.45; }
+.listing-why summary { cursor: pointer; font-weight: 700; }
+.listing-why p { margin: 7px 0 0; }
+.shortlist-compare { margin: 16px 0; padding: 16px; border: 1px solid #d9e1d5; border-radius: 9px; background: #fbfaf4; }
+.shortlist-compare h3 { margin: 0 0 10px; color: #34463a; }
+.shortlist-compare-scroll { overflow-x: auto; }
+.shortlist-compare table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.shortlist-compare th, .shortlist-compare td { padding: 9px; border-bottom: 1px solid #e2e5dc; text-align: left; vertical-align: top; }
+.shortlist-compare p { margin: 10px 0 0; color: #6f786b; font-size: 11px; }
+.recommendation-link span { display: grid; gap: 3px; text-align: left; }
+.recommendation-link small + small { color: #687365; line-height: 1.4; }
+@media (max-width: 520px) { .assistant-preferences { grid-template-columns: 1fr; } }

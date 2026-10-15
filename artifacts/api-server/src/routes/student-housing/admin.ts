@@ -139,6 +139,12 @@ router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
     res.status(400).json({ error: "Persona and tone cannot be blank." });
     return;
   }
+  if (parsed.data.integrations.some((entry) => {
+    try { return new URL(entry.url).protocol !== "https:"; } catch { return true; }
+  })) {
+    res.status(400).json({ error: "Integration links must use HTTPS." });
+    return;
+  }
   try {
     const saved = await saveAgentSettings({
       persona,
@@ -153,6 +159,7 @@ router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
       knowledgeRules: parsed.data.knowledgeRules.trim(),
       ctaSettings: parsed.data.ctaSettings.trim(),
       feedbackSettings: parsed.data.feedbackSettings.trim(),
+      integrations: parsed.data.integrations.map((entry) => ({ ...entry, label: entry.label.trim(), url: entry.url.trim() })),
     });
     res.json(UpdateHousingAdminAgentSettingsResponse.parse(saved));
   } catch (error) {

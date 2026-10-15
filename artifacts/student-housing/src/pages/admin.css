@@ -226,3 +226,10 @@
 
 .reset-defaults-button { width: 100%; margin-top: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .admin-error-detail { margin: 10px 0 0; padding: 8px 10px; border-radius: 6px; background: #f6ece7; color: #8a4a3c; font: 500 10px/1.55 ui-monospace, Menlo, monospace; word-break: break-word; }
+.integration-form { display: grid; gap: 8px; max-width: 560px; }
+.integration-form input, .integration-form select { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #d9ddd1; border-radius: 6px; background: #fffef9; color: #34463a; }
+.integration-list { display: grid; gap: 8px; padding: 0; list-style: none; }
+.integration-list li { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #e1e4d9; border-radius: 7px; }
+.integration-list li > span { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.integration-list a { overflow-wrap: anywhere; color: #39634e; font-size: 12px; }
+@media (max-width: 600px) { .integration-list li { align-items: stretch; flex-direction: column; } }

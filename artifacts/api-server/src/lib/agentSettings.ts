@@ -20,10 +20,12 @@ export type AgentSettings = {
   knowledgeRules: string;
   ctaSettings: string;
   feedbackSettings: string;
+  integrations: AgentIntegration[];
   updatedAt: Date;
 };
 
 export type AgentSettingsInput = Omit<AgentSettings, "updatedAt">;
+export type AgentIntegration = { id: string; type: "api" | "mcp"; label: string; url: string };
 
 /** Which 0-10 scale values belong to each of the five empathy stages. */
 export const EMPATHY_STAGES = [
@@ -66,6 +68,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettingsInput = {
   knowledgeRules: "Treat property records and supplied sources as the only source of listing-specific facts. Say when information is unavailable, uncertain, or outdated and offer to check with the property contact or a human. Distances, commute times, amenities and policies must not be inferred. Clearly distinguish illustrative/demo records from verified inventory.",
   ctaSettings: "Offer only one relevant next step: show details, compare up to three options, schedule a visit, request owner callback, show nearby map, save shortlist, or talk to a human. Get explicit permission before owner contact or sharing personal details.",
   feedbackSettings: "After the request is fulfilled, acknowledge briefly and ask how helpful the conversation was. Offer Very helpful, Somewhat helpful, and Not helpful.",
+  integrations: [],
 };
 
 function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
@@ -88,6 +91,7 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
     knowledgeRules: row.knowledgeRules ?? DEFAULT_AGENT_SETTINGS.knowledgeRules,
     ctaSettings: row.ctaSettings ?? DEFAULT_AGENT_SETTINGS.ctaSettings,
     feedbackSettings: row.feedbackSettings ?? DEFAULT_AGENT_SETTINGS.feedbackSettings,
+    integrations: Array.isArray(row.integrations) ? row.integrations : [],
     updatedAt: row.updatedAt,
   };
 }
