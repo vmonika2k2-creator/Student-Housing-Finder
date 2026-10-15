@@ -91,7 +91,7 @@ router.get("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
     const code = (root as { code?: unknown })?.code;
     if (code === "42703") {
       res.status(503).json({
-        error: "The settings database schema is out of date. Sync the latest schema in development, then Publish the app to update production.",
+        error: "The settings database schema is out of date. In Replit Development Shell, run `pnpm --filter @workspace/db run push` and approve the schema sync, then Publish the app to update production. Do not rename the database or change DATABASE_URL.",
       });
       return;
     }

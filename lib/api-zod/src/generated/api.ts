@@ -52,7 +52,7 @@ export const sendStudentHousingChatBodyMessageMax = 1200;
 
 export const sendStudentHousingChatBodyHistoryItemContentMax = 1200;
 
-export const sendStudentHousingChatBodyHistoryMax = 12;
+export const sendStudentHousingChatBodyHistoryMax = 30;
 
 export const sendStudentHousingChatBodyListingIdsMax = 20;
 
