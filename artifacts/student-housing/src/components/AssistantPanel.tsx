@@ -46,7 +46,6 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
   const [moveInUrgency, setMoveInUrgency] = useState<'flexible' | 'soon' | 'urgent'>('flexible');
-  const [responseEmpathy, setResponseEmpathy] = useState(6);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
@@ -72,9 +71,9 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
         data: {
           conversationId,
           moveInUrgency,
-          responseEmpathy,
           message,
-          history: messages.map(({ role, content }) => ({ role, content })),
+          // Keep request history within the API's 12-message limit as the conversation grows.
+          history: messages.slice(-12).map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),
         },
       });
