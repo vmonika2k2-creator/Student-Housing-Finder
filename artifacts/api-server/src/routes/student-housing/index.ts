@@ -117,7 +117,11 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
         },
         {
           role: "system",
-          content: `Square Yards listings currently shown to the student: ${JSON.stringify(availableListings)}`,
+          content: "LIVE LISTING RESULTS: The web client runs the same Square Yards search used by the browse filters before sending a housing search message. When listings are supplied, answer the student's request with the best matching listings in this same reply. Do not ask permission to search or promise to search later. Rank up to three supplied listing IDs, explain the source-backed reason each matches and its trade-off, and let the UI display their cards with compare, save, and contact-via-listing actions. If no listings were supplied, state that no matching listings were returned and give one practical filter adjustment. Never say a listing is currently available; call it a current source listing and ask the student to confirm availability with its contact.",
+        },
+        {
+          role: "system",
+          content: `Square Yards listings supplied for this turn: ${JSON.stringify(availableListings)}`,
         },
         {
           role: "system",
@@ -143,11 +147,14 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
       throw new Error("The assistant returned an invalid response.");
     }
 
+    const rankedIds = parsedResponse.data.recommendedListingIds
+      .filter((id) => allowedIds.has(id))
+      .slice(0, 3);
     const result = SendStudentHousingChatResponse.parse({
       reply: parsedResponse.data.reply,
-      recommendedListingIds: parsedResponse.data.recommendedListingIds
-        .filter((id) => allowedIds.has(id))
-        .slice(0, 3),
+      recommendedListingIds: rankedIds.length > 0
+        ? rankedIds
+        : availableListings.slice(0, 3).map((listing) => listing.id),
     });
     res.json(result);
   } catch (error) {

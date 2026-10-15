@@ -4,9 +4,12 @@ import { useSendStudentHousingChat, type StudentHousingListing } from '@workspac
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 type Message = { role: 'user' | 'assistant'; content: string };
+type SearchCriteria = { location: string; landmark: string; minRent: string; maxRent: string; propertyType: string; bedrooms: string; furnishing: string; amenities: string[] };
 type Props = {
   listings: StudentHousingListing[];
+  onSearch: (criteria: SearchCriteria) => Promise<StudentHousingListing[]>;
   savedIds: string[];
+  comparisonListings: StudentHousingListing[];
   onToggleSaved: (listing: StudentHousingListing) => void;
   comparisonIds: string[];
   onToggleCompare: (id: string) => void;
@@ -45,12 +48,15 @@ function ReplyText({ text }: { text: string }) {
 
 const prompts = ['Show me private rooms under ₹15,000', 'What feels easiest for the metro?', 'I want more privacy without a studio budget'];
 
-export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonIds, onToggleCompare, onShowListing, open, onOpenChange }: Props) {
+export function AssistantPanel({ listings, onSearch, savedIds, comparisonListings, onToggleSaved, comparisonIds, onToggleCompare, onShowListing, open, onOpenChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
   const [moveInUrgency, setMoveInUrgency] = useState<'flexible' | 'soon' | 'urgent'>('flexible');
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [searchedListings, setSearchedListings] = useState<StudentHousingListing[]>([]);
+  const [searchCriteria, setSearchCriteria] = useState<SearchCriteria | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -63,14 +69,47 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, chat.isPending]);
+  }, [messages.length, chat.isPending, isSearching]);
 
   async function sendMessage(value = draft) {
     const message = value.trim();
-    if (!message || chat.isPending) return;
+    if (!message || chat.isPending || isSearching) return;
     setDraft('');
     setRecommendations([]);
+    setMessages((current) => [...current, { role: 'user', content: message }]);
     try {
+      const conversationText = [...messages.filter((item) => item.role === 'user').map((item) => item.content), message].join('\n').replace(/[‐‑‒–—]/g, '-');
+      const rentRange = conversationText.match(/(?:₹|rs\.?\s*)([\d,]+)\s*(?:-|to)\s*(?:₹|rs\.?\s*)?([\d,]+)/i);
+      const rent = rentRange?.[2]?.replace(/,/g, '') ?? conversationText.match(/(?:₹|rs\.?\s*)([\d,]+)\s*(?:\/\s*month|per\s+month|monthly)?/i)?.[1]?.replace(/,/g, '')
+        ?? conversationText.match(/\b(?:under|below|max(?:imum)?(?: budget)?(?: of)?|budget(?: of)?)\s*(?:₹|rs\.?\s*)?([\d,]+)/i)?.[1]?.replace(/,/g, '');
+      const bhk = conversationText.match(/\b(1\s*RK|studio|[1-4]\s*BHK)\b/i)?.[1]?.replace(/\s+/g, ' ').toUpperCase() ?? '';
+      const locality = /loni\s+kalbhor/i.test(conversationText) ? 'Loni Kalbhor' : conversationText.match(/\b(?:in|near|around)\s+(loni\s+kalbhor|[a-z][a-z\s-]{1,40}?)(?=\s+(?:for|under|below|within|with|and|at|near|move|moving)\b|[,\n.]|$)/i)?.[1]?.trim();
+      const requestedAmenities = (['parking', 'lift', 'gym', 'security'] as const).filter((amenity) => new RegExp(`\\b${amenity === 'gym' ? 'gym|gymnasium' : amenity}\\b`, 'i').test(conversationText));
+      const isHousingSearch = /\b(find|show|search|looking for|need|want|shortlist|flat|apartment|room|rental|rentals)\b/i.test(message);
+      const hasHousingIntent = /\b(find|show|search|looking for|need|want|shortlist|flat|apartment|room|rental|rentals)\b/i.test(conversationText);
+      const hasCurrentSearchDetail = /(?:₹|rs\.?\s*[\d,]+|\bbudget\b.{0,12}\d|\b(?:under|below)\s*\d|\b(?:1\s*RK|studio|[1-4]\s*BHK)\b|loni\s+kalbhor|mit\s*-?\s*adt|university|\b(?:whole\s+)?flat\b|\b(?:furnished|semi[- ]?furnished|unfurnished)\b|\b(?:parking|lift|gym|gymnasium|security)\b)/i.test(message);
+      const shouldSearch = hasHousingIntent && (listings.length === 0 ? isHousingSearch || hasCurrentSearchDetail : hasCurrentSearchDetail);
+      const criteria: SearchCriteria = {
+        location: locality && !/mit\s*-?\s*adt/i.test(locality) ? locality : 'Pune',
+        landmark: /mit\s*-?\s*adt|university/i.test(conversationText) ? 'MIT ADT University' : '',
+        minRent: rentRange?.[1]?.replace(/,/g, '') ?? '',
+        maxRent: rent ?? '',
+        propertyType: /\b(flat|whole flat|apartment)\b/i.test(conversationText) ? 'Apartment' : '',
+        bedrooms: bhk,
+        furnishing: /\bsemi[- ]?furnished\b/i.test(conversationText) ? 'Semi-Furnished' : /\bunfurnished\b/i.test(conversationText) ? 'Unfurnished' : /\bfurnished\b/i.test(conversationText) ? 'Furnished' : '',
+        amenities: requestedAmenities,
+      };
+      setIsSearching(shouldSearch);
+      let searchListings: StudentHousingListing[];
+      try {
+        searchListings = shouldSearch ? await onSearch(criteria) : listings;
+      } finally {
+        setIsSearching(false);
+      }
+      if (shouldSearch) {
+        setSearchedListings(searchListings);
+        setSearchCriteria(criteria);
+      }
       const response = await chat.mutateAsync({
         data: {
           conversationId,
@@ -78,20 +117,34 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
           message,
           // Retain enough context that earlier budget, location, and timing answers are not forgotten.
           history: messages.slice(-30).map(({ role, content }) => ({ role, content })),
-          listingIds: listings.map(({ id }) => id),
+          listingIds: searchListings.map(({ id }) => id),
         },
       });
-      setMessages((current) => [...current, { role: 'user', content: message }, { role: 'assistant', content: response.reply }]);
+      setMessages((current) => [...current, { role: 'assistant', content: response.reply }]);
       setRecommendations(response.recommendedListingIds);
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch {
+      setMessages((current) => current.at(-1)?.role === 'user' && current.at(-1)?.content === message ? current.slice(0, -1) : current);
       setDraft(message);
     }
   }
 
   const recommendationListings = recommendations
-    .map((id) => listings.find((listing) => listing.id === id))
+    .map((id) => searchedListings.find((listing) => listing.id === id) ?? listings.find((listing) => listing.id === id))
     .filter((listing): listing is StudentHousingListing => Boolean(listing));
+  function whyThisListing(listing: StudentHousingListing): string {
+    const reasons: string[] = [];
+    if (searchCriteria?.maxRent && listing.monthlyRent !== null && listing.monthlyRent <= Number(searchCriteria.maxRent)) reasons.push(`within your ₹${new Intl.NumberFormat('en-IN').format(Number(searchCriteria.maxRent))}/month cap`);
+    if (searchCriteria?.bedrooms && listing.bedrooms?.toLowerCase().replace(/\s+/g, '') === searchCriteria.bedrooms.toLowerCase().replace(/\s+/g, '')) reasons.push(`matches your ${searchCriteria.bedrooms} request`);
+    if (searchCriteria?.propertyType && listing.propertyType?.toLowerCase() === searchCriteria.propertyType.toLowerCase()) reasons.push(`matches your ${searchCriteria.propertyType.toLowerCase()} preference`);
+    if (searchCriteria?.furnishing && listing.furnishingStatus?.toLowerCase() === searchCriteria.furnishing.toLowerCase()) reasons.push(`matches your ${searchCriteria.furnishing.toLowerCase()} preference`);
+    const matchedAmenities = searchCriteria?.amenities.filter((amenity) => listing.amenities.some((item) => item.toLowerCase().includes(amenity))) ?? [];
+    if (matchedAmenities.length) reasons.push(`includes your requested ${matchedAmenities.join(' and ')}`);
+    if (searchCriteria?.location && listing.neighborhood.toLowerCase().includes(searchCriteria.location.toLowerCase())) reasons.push(`listed in ${searchCriteria.location}`);
+    if (!reasons.length && listing.monthlyRent !== null) reasons.push(`rent is ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/month`);
+    if (!reasons.length && listing.amenities.length) reasons.push(`the listing includes ${listing.amenities.slice(0, 2).join(' and ')}`);
+    return reasons.length ? reasons.join(' · ') : 'The source listing has limited details, so check its features and terms before deciding.';
+  }
   const lastReply = messages.at(-1)?.role === 'assistant' ? messages.at(-1)?.content.toLowerCase() ?? '' : '';
   const replyChips = lastReply.includes('how close') || lastReply.includes('how far') || lastReply.includes('distance')
     ? ['Just a walk away', 'Under 1 km', '2–3 km away', 'Up to 5 km', 'Anywhere is fine']
@@ -123,7 +176,7 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
       </DialogTrigger>
       <DialogContent className="assistant-dialog" data-testid="dialog-housing-assistant" onInteractOutside={(event) => event.preventDefault()}>
         <DialogTitle className="sr-only">Talk it through with your housing guide</DialogTitle>
-        <DialogDescription className="sr-only">Ask questions and compare the illustrative student homes shown on this page.</DialogDescription>
+        <DialogDescription className="sr-only">Search current Pune rental listings, understand recommendations, and compare or save places.</DialogDescription>
         <aside className="assistant-panel" id="housing-assistant" data-testid="panel-housing-assistant">
           <div className="assistant-top">
             <div className="assistant-mark"><MessageCircle size={18} /></div>
@@ -138,7 +191,7 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
             <div className="assistant-welcome" data-testid="text-assistant-intro">
               <span className="sparkle"><Sparkles size={16} /></span>
               <p>Not sure what to compromise on? Tell me what matters—budget, a door of your own, or a shorter commute.</p>
-              <span className="assistant-note">I’ll help you find a next step using the homes shown here.</span>
+              <span className="assistant-note">Tell me what you need and I’ll search current Pune listings, explain my top matches, and help you compare or save them.</span>
             </div>
           ) : (
             <div className="message-list" aria-live="polite" data-testid="list-chat-messages">
@@ -148,14 +201,14 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
                   {message.role === 'assistant' ? <ReplyText text={message.content} /> : <p>{message.content}</p>}
                 </div>
               ))}
-              {chat.isPending && <div className="chat-message assistant pending-message" data-testid="status-chat-loading"><span className="message-speaker">Your guide</span><p><span className="typing-dots">Thinking through the trade-offs…</span></p></div>}
+              {(isSearching || chat.isPending) && <div className="chat-message assistant pending-message" data-testid="status-chat-loading"><span className="message-speaker">Your guide</span><p><span className="typing-dots">{isSearching ? 'Searching current Pune listings…' : 'Reviewing the matches and trade-offs…'}</span></p></div>}
             {recommendationListings.length > 0 && (
               <div className="recommendation-box" data-testid="list-chat-recommendations">
                 <p className="eyebrow">Worth a closer look</p>
                 {recommendationListings.map((listing, index) => (
                   <div className="recommendation-option" key={listing.id} data-testid={`card-chat-recommendation-${listing.id}`}>
                     <button type="button" className="recommendation-link" data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                      <span><small className="recommendation-rank">SUGGESTION {index + 1}</small><strong>{listing.neighborhood}</strong><small>{listing.city}{listing.monthlyRent === null ? '' : ` · ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`}{listing.distanceKm == null ? '' : ` · ${listing.distanceKm} km from landmark`}</small><small>Why it may fit: {listing.propertyType ?? listing.roomType}{listing.bedrooms ? `, ${listing.bedrooms}` : ''}{listing.furnishingStatus ? `, ${listing.furnishingStatus.toLowerCase()}` : ''}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}. Confirm availability with the listing contact.</small></span><ArrowRight size={16} />
+                      <span><small className="recommendation-rank">{index === 0 ? 'TOP MATCH' : `SUGGESTION ${index + 1}`}</small><strong>{listing.title}</strong><small>{listing.neighborhood}, {listing.city}{listing.monthlyRent === null ? '' : ` · ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`}{listing.distanceKm == null ? '' : ` · ${listing.distanceKm} km from landmark`}</small><small><b>Why I recommend it:</b> {whyThisListing(listing)}</small><small>Current source listing; confirm availability and terms with the listing contact.</small></span><ArrowRight size={16} />
                     </button>
                     <div className="recommendation-actions">
                       <button type="button" onClick={() => onToggleSaved(listing)} data-testid={`button-save-chat-recommendation-${listing.id}`}><Heart size={13} fill={savedIds.includes(listing.id) ? 'currentColor' : 'none'} />{savedIds.includes(listing.id) ? 'Saved' : 'Save for later'}</button>
@@ -166,20 +219,21 @@ export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonId
                 ))}
               </div>
             )}
+            {comparisonListings.length > 0 && <div className="chat-compare" data-testid="panel-chat-comparison"><strong>Compare your shortlist · {comparisonListings.length}/3</strong>{comparisonListings.length < 2 && <p>Add one more place to compare them side by side.</p>}{comparisonListings.map((listing) => <div className="chat-compare-row" key={listing.id}><span><b>{listing.title}</b><small>{listing.neighborhood} · {listing.monthlyRent === null ? 'Rent not listed' : `₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`} · {listing.bedrooms ?? listing.propertyType ?? 'Type not listed'}</small></span><button type="button" onClick={() => onToggleCompare(listing.id)}>Remove</button></div>)}</div>}
               <div ref={endRef} className="chat-end" aria-hidden="true" />
             </div>
           )}
           {chat.isError && <div className="chat-error" role="alert" data-testid="status-chat-error">That didn’t go through. Check your connection and try again.</div>}
-          {replyChips.length > 0 && <div className="quick-prompts" aria-label="Suggested replies">{replyChips.map((option) => <button type="button" key={option} disabled={chat.isPending} onClick={() => void sendMessage(option)}>{option}</button>)}</div>}
+          {replyChips.length > 0 && <div className="quick-prompts" aria-label="Suggested replies">{replyChips.map((option) => <button type="button" key={option} disabled={chat.isPending || isSearching} onClick={() => void sendMessage(option)}>{option}</button>)}</div>}
           {messages.length === 0 && <div className="quick-prompts">
             <p className="eyebrow">Try asking</p>
-            {prompts.map((prompt, index) => <button type="button" key={prompt} data-testid={`button-quick-prompt-${index}`} disabled={chat.isPending || listings.length === 0} onClick={() => void sendMessage(prompt)}>{prompt}<ArrowRight size={13} /></button>)}
+            {prompts.map((prompt, index) => <button type="button" key={prompt} data-testid={`button-quick-prompt-${index}`} disabled={chat.isPending || isSearching} onClick={() => void sendMessage(prompt)}>{prompt}<ArrowRight size={13} /></button>)}
           </div>}
           <div className="chat-footer">
           <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
             <label htmlFor="chat-input" className="sr-only">Ask about student housing</label>
             <textarea ref={inputRef} id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
-            <button type="submit" disabled={!draft.trim() || chat.isPending || listings.length === 0} aria-label="Send message" data-testid="button-send-chat">
+            <button type="submit" disabled={!draft.trim() || chat.isPending || isSearching} aria-label="Send message" data-testid="button-send-chat">
               {chat.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
             </button>
           </form>

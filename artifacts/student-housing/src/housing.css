@@ -336,4 +336,11 @@ body { transition: padding-right .2s ease; }
 .saved-availability-note p, .saved-legacy-note p { margin: 0; font-size: 11px; line-height: 1.6; }
 .recommendation-link span { display: grid; gap: 3px; text-align: left; }
 .recommendation-link small + small { color: #687365; line-height: 1.4; }
+.chat-compare { margin: 10px 0; padding: 11px 12px; border: 1px solid #d9e1d5; border-radius: 8px; background: #fffef9; color: #34463a; font-size: 11px; }
+.chat-compare > strong { display: block; margin-bottom: 5px; font-size: 12px; }
+.chat-compare > p { margin: 5px 0; color: #687365; line-height: 1.45; }
+.chat-compare-row { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid #e8eadf; }
+.chat-compare-row span { display: grid; gap: 3px; min-width: 0; }
+.chat-compare-row small { color: #687365; line-height: 1.4; }
+.chat-compare-row button { flex: 0 0 auto; border: 0; background: transparent; color: #8b4c3d; font-size: 10px; cursor: pointer; }
 
