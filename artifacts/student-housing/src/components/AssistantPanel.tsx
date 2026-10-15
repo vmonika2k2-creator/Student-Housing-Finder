@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowRight, ArrowUpRight, LoaderCircle, MessageCircle, Send, Sparkles } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, ArrowUpRight, ExternalLink, Heart, LoaderCircle, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { useSendStudentHousingChat, type StudentHousingListing } from '@workspace/api-client-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type Props = {
   listings: StudentHousingListing[];
+  savedIds: string[];
+  onToggleSaved: (listing: StudentHousingListing) => void;
+  comparisonIds: string[];
+  onToggleCompare: (id: string) => void;
   onShowListing: (id: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,7 +45,7 @@ function ReplyText({ text }: { text: string }) {
 
 const prompts = ['Show me private rooms under ₹15,000', 'What feels easiest for the metro?', 'I want more privacy without a studio budget'];
 
-export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: Props) {
+export function AssistantPanel({ listings, savedIds, onToggleSaved, comparisonIds, onToggleCompare, onShowListing, open, onOpenChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
@@ -148,10 +152,17 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
             {recommendationListings.length > 0 && (
               <div className="recommendation-box" data-testid="list-chat-recommendations">
                 <p className="eyebrow">Worth a closer look</p>
-                {recommendationListings.map((listing) => (
-                  <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                    <span><strong>{listing.neighborhood}</strong><small>{listing.city}{listing.monthlyRent === null ? '' : ` · ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`}{listing.distanceKm == null ? '' : ` · ${listing.distanceKm} km from landmark`}</small><small>Why it may fit: {listing.propertyType ?? listing.roomType}{listing.bedrooms ? `, ${listing.bedrooms}` : ''}{listing.furnishingStatus ? `, ${listing.furnishingStatus.toLowerCase()}` : ''}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}. Availability is not verified.</small></span><ArrowRight size={16} />
-                  </button>
+                {recommendationListings.map((listing, index) => (
+                  <div className="recommendation-option" key={listing.id} data-testid={`card-chat-recommendation-${listing.id}`}>
+                    <button type="button" className="recommendation-link" data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
+                      <span><small className="recommendation-rank">SUGGESTION {index + 1}</small><strong>{listing.neighborhood}</strong><small>{listing.city}{listing.monthlyRent === null ? '' : ` · ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`}{listing.distanceKm == null ? '' : ` · ${listing.distanceKm} km from landmark`}</small><small>Why it may fit: {listing.propertyType ?? listing.roomType}{listing.bedrooms ? `, ${listing.bedrooms}` : ''}{listing.furnishingStatus ? `, ${listing.furnishingStatus.toLowerCase()}` : ''}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}. Confirm availability with the listing contact.</small></span><ArrowRight size={16} />
+                    </button>
+                    <div className="recommendation-actions">
+                      <button type="button" onClick={() => onToggleSaved(listing)} data-testid={`button-save-chat-recommendation-${listing.id}`}><Heart size={13} fill={savedIds.includes(listing.id) ? 'currentColor' : 'none'} />{savedIds.includes(listing.id) ? 'Saved' : 'Save for later'}</button>
+                      <button type="button" disabled={!comparisonIds.includes(listing.id) && comparisonIds.length >= 3} onClick={() => onToggleCompare(listing.id)} data-testid={`button-compare-chat-recommendation-${listing.id}`}><ArrowLeftRight size={13} />{comparisonIds.includes(listing.id) ? 'Added to compare' : 'Compare'}</button>
+                      {listing.listingUrl && <a href={listing.listingUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-contact-chat-recommendation-${listing.id}`}>Contact via listing <ExternalLink size={12} /></a>}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
