@@ -327,7 +327,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StudentHousingChatMessage"
-          maxItems: 12
+          maxItems: 30
         listingIds:
           type: array
           items:

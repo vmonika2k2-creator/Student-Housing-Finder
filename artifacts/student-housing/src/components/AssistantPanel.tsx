@@ -72,8 +72,8 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           conversationId,
           moveInUrgency,
           message,
-          // Keep request history within the API's 12-message limit as the conversation grows.
-          history: messages.slice(-12).map(({ role, content }) => ({ role, content })),
+          // Retain enough context that earlier budget, location, and timing answers are not forgotten.
+          history: messages.slice(-30).map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),
         },
       });
