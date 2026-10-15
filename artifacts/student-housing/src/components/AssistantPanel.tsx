@@ -150,7 +150,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
                 <p className="eyebrow">Worth a closer look</p>
                 {recommendationListings.map((listing) => (
                   <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo · {listing.transitMinutes} min to transit</small><small>Why it may fit: {listing.furnished ? 'furnished' : 'unfurnished'} {listing.roomType.toLowerCase()}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}.</small></span><ArrowRight size={16} />
+                    <span><strong>{listing.neighborhood}</strong><small>{listing.city}{listing.monthlyRent === null ? '' : ` · ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo`}{listing.distanceKm == null ? '' : ` · ${listing.distanceKm} km from landmark`}</small><small>Why it may fit: {listing.propertyType ?? listing.roomType}{listing.bedrooms ? `, ${listing.bedrooms}` : ''}{listing.furnishingStatus ? `, ${listing.furnishingStatus.toLowerCase()}` : ''}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}. Availability is not verified.</small></span><ArrowRight size={16} />
                   </button>
                 ))}
               </div>
