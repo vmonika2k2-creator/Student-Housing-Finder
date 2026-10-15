@@ -17,6 +17,12 @@ export const studentHousingAgentSettingsTable = pgTable(
     goalOrientationScale: integer("goal_orientation_scale").notNull(),
     empathyExamples: jsonb("empathy_examples").$type<string[]>(),
     goal: text("goal"),
+    conversationBehavior: text("conversation_behavior"),
+    guardrails: text("guardrails"),
+    handoverRules: text("handover_rules"),
+    knowledgeRules: text("knowledge_rules"),
+    ctaSettings: text("cta_settings"),
+    feedbackSettings: text("feedback_settings"),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

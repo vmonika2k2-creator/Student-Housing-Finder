@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
+import OpenAI from "openai";
 import {
   GetHousingAdminAgentSettingsResponse,
   GetHousingAdminSessionResponse,
@@ -18,9 +19,10 @@ import {
   passwordMatches,
   requireAdmin,
 } from "../../lib/adminAuth";
-import { getAgentSettings, saveAgentSettings } from "../../lib/agentSettings";
+import { buildSystemPrompt, getAgentSettings, saveAgentSettings } from "../../lib/agentSettings";
 
 const router: IRouter = Router();
+const previewOpenAI = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 const cookieOptions = {
   httpOnly: true,
@@ -97,6 +99,34 @@ router.get("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
   }
 });
 
+router.get("/housing/admin/agent-settings/preview", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const settings = await getAgentSettings();
+    res.json({ prompt: buildSystemPrompt(settings) });
+  } catch (error) {
+    req.log.error({ err: error }, "Could not preview agent prompt");
+    res.status(500).json({ error: "The final system prompt could not be loaded." });
+  }
+});
+
+router.post("/housing/admin/agent-settings/test", requireAdmin, async (req, res): Promise<void> => {
+  const message = typeof req.body?.message === "string" ? req.body.message.trim().slice(0, 1200) : "";
+  if (!message) { res.status(400).json({ error: "Enter a test message." }); return; }
+  if (!previewOpenAI) { res.status(503).json({ error: "The agent is not configured." }); return; }
+  try {
+    const settings = await getAgentSettings();
+    const result = await previewOpenAI.chat.completions.create({
+      model: "gpt-5-mini",
+      messages: [{ role: "system", content: buildSystemPrompt(settings) }, { role: "user", content: message }],
+      max_completion_tokens: 500,
+    });
+    res.json({ reply: result.choices[0]?.message.content ?? "The agent returned an empty response." });
+  } catch (error) {
+    req.log.error({ err: error }, "Agent test failed");
+    res.status(502).json({ error: "The test conversation could not be completed." });
+  }
+});
+
 router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Promise<void> => {
   const parsed = UpdateHousingAdminAgentSettingsBody.safeParse(req.body);
   if (!parsed.success) {
@@ -117,6 +147,12 @@ router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
       goalOrientationScale: parsed.data.goalOrientationScale,
       empathyExamples: parsed.data.empathyExamples.map((example) => example.trim()),
       goal: parsed.data.goal.trim(),
+      conversationBehavior: parsed.data.conversationBehavior.trim(),
+      guardrails: parsed.data.guardrails.trim(),
+      handoverRules: parsed.data.handoverRules.trim(),
+      knowledgeRules: parsed.data.knowledgeRules.trim(),
+      ctaSettings: parsed.data.ctaSettings.trim(),
+      feedbackSettings: parsed.data.feedbackSettings.trim(),
     });
     res.json(UpdateHousingAdminAgentSettingsResponse.parse(saved));
   } catch (error) {

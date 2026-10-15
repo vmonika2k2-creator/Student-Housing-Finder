@@ -37,8 +37,8 @@ const EMPATHY_EXAMPLE_PLACEHOLDERS = [
 ];
 
 const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
-  persona: 'You are a practical, friendly housing guide for students moving to a new city. Help them weigh budget, privacy, shared living, transit, and amenities, and keep the student in charge of the decision.',
-  tone: 'Warm, plain-spoken, and calm. Explain trade-offs without pressure.',
+  persona: 'You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.',
+  tone: 'Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.',
   empathyScale: 5,
   goalOrientationScale: 5,
   empathyExamples: [
@@ -49,6 +49,12 @@ const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
     'Student: "I\'m so stressed about finding a place."\nGuide: "I can hear how overwhelming this feels, and it makes complete sense to be anxious about a move like this. You\'re not behind. We\'ll go at your pace, and I\'ll help you feel sure about each choice."',
   ],
   goal: 'Help the student narrow down to two or three homes they would be happy to visit.',
+  conversationBehavior: 'Ask one question at a time. Follow the guided flow: opening, intent, missing details, answer, clarification or repair if needed, relevant sequence expansion, fulfilment check, one CTA, acknowledgement and feedback. Prioritise safety, utilities, food, washroom/furnishing, nearby services, transport and lifestyle.',
+  guardrails: 'Never promise absolute safety or guaranteed refunds. Use verified facts only. Do not discriminate by protected characteristics. Do not invent availability, distances, amenities or rules. Do not ask for sensitive personal information. Get permission before sharing contact details.',
+  handoverRules: 'Offer a human immediately when requested. Confirm before contacting an owner or sharing personal details. For confusion, simplify once then offer a human. For frustration or safety concerns, acknowledge and offer human support.',
+  knowledgeRules: 'Use supplied property data only. State when information is missing or uncertain. Never invent nearby services, distances, menus, availability, safety arrangements or policies.',
+  ctaSettings: 'Offer one relevant next step: view details, compare properties, schedule a visit, request owner callback, show a nearby map, save a shortlist, or talk to a human.',
+  feedbackSettings: 'After fulfilling the request, acknowledge briefly and ask how helpful the conversation was: Very helpful, Somewhat helpful, or Not helpful.',
 };
 
 function empathyStageFor(value: number) {
@@ -64,6 +70,12 @@ function toFormValues(settings: StudentHousingAgentSettingsInput): StudentHousin
     goalOrientationScale: settings.goalOrientationScale,
     empathyExamples: Array.from({ length: EMPATHY_STAGES.length }, (_, index) => settings.empathyExamples[index] ?? ''),
     goal: settings.goal,
+    conversationBehavior: settings.conversationBehavior ?? DEFAULT_SETTINGS.conversationBehavior,
+    guardrails: settings.guardrails ?? DEFAULT_SETTINGS.guardrails,
+    handoverRules: settings.handoverRules ?? DEFAULT_SETTINGS.handoverRules,
+    knowledgeRules: settings.knowledgeRules ?? DEFAULT_SETTINGS.knowledgeRules,
+    ctaSettings: settings.ctaSettings ?? DEFAULT_SETTINGS.ctaSettings,
+    feedbackSettings: settings.feedbackSettings ?? DEFAULT_SETTINGS.feedbackSettings,
   };
 }
 
@@ -204,10 +216,17 @@ function SettingsEditor({
   });
   const update = useUpdateHousingAdminAgentSettings();
   const form = useForm<StudentHousingAgentSettingsInput>({
-    defaultValues: { persona: '', tone: '', empathyScale: 5, goalOrientationScale: 5, empathyExamples: ['', '', '', '', ''], goal: '' },
+    defaultValues: { ...DEFAULT_SETTINGS },
     mode: 'onChange',
   });
   const [saveError, setSaveError] = useState('');
+  const [promptPreview, setPromptPreview] = useState('');
+  const [previewError, setPreviewError] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [testMessage, setTestMessage] = useState('I need a room near my college');
+  const [testReply, setTestReply] = useState('');
+  const [testError, setTestError] = useState('');
+  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     if (settings.data) {
@@ -231,6 +250,36 @@ function SettingsEditor({
     }
   }
 
+  async function loadPromptPreview() {
+    setPreviewLoading(true);
+    setPreviewError('');
+    try {
+      const response = await fetch('/api/housing/admin/agent-settings/preview', { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('Could not load the final system prompt.');
+      const result = await response.json() as { prompt: string };
+      setPromptPreview(result.prompt);
+    } catch (error) {
+      setPreviewError(errorMessage(error, 'Could not load the final system prompt.'));
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  async function runAgentTest() {
+    setTestLoading(true);
+    setTestError('');
+    try {
+      const response = await fetch('/api/housing/admin/agent-settings/test', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: testMessage }) });
+      const result = await response.json() as { reply?: string; error?: string };
+      if (!response.ok) throw new Error(result.error || 'The test conversation failed.');
+      setTestReply(result.reply ?? '');
+    } catch (error) {
+      setTestError(errorMessage(error, 'The test conversation failed.'));
+    } finally {
+      setTestLoading(false);
+    }
+  }
+
   const { register, watch, setValue, handleSubmit, formState: { isDirty, errors } } = form;
   const empathy = watch('empathyScale');
   const goalOrientation = watch('goalOrientationScale');
@@ -246,6 +295,12 @@ function SettingsEditor({
     setValue('goalOrientationScale', DEFAULT_SETTINGS.goalOrientationScale, options);
     setValue('empathyExamples', [...DEFAULT_SETTINGS.empathyExamples], options);
     setValue('goal', DEFAULT_SETTINGS.goal, options);
+    setValue('conversationBehavior', DEFAULT_SETTINGS.conversationBehavior, options);
+    setValue('guardrails', DEFAULT_SETTINGS.guardrails, options);
+    setValue('handoverRules', DEFAULT_SETTINGS.handoverRules, options);
+    setValue('knowledgeRules', DEFAULT_SETTINGS.knowledgeRules, options);
+    setValue('ctaSettings', DEFAULT_SETTINGS.ctaSettings, options);
+    setValue('feedbackSettings', DEFAULT_SETTINGS.feedbackSettings, options);
     setResetNote(true);
   }
 
@@ -284,7 +339,7 @@ function SettingsEditor({
               <section className="editor-section" aria-labelledby="persona-title">
                 <div className="section-number">01</div>
                 <div className="section-body">
-                  <div className="editor-section-heading"><div><p className="admin-eyebrow">THE GUIDE’S POINT OF VIEW</p><h2 id="persona-title">Persona</h2></div><span className="section-note">Who is speaking?</span></div>
+                  <div className="editor-section-heading"><div><p className="admin-eyebrow">THE GUIDE’S POINT OF VIEW</p><h2 id="persona-title">Personality</h2></div><span className="section-note">Who is speaking?</span></div>
                   <p className="editor-intro">Describe the guide’s role and the principles it should bring to every housing conversation.</p>
                   <label className="admin-label" htmlFor="persona">Persona instructions</label>
                   <textarea
@@ -373,6 +428,24 @@ function SettingsEditor({
               </section>
             </div>
 
+              {([
+                ['conversationBehavior', 'Agent behaviour', 'Opening questions, clarifications, repairs and conversation sequence.'],
+                ['guardrails', 'Guardrails', 'Safety, fairness, accuracy and privacy rules.'],
+                ['handoverRules', 'Handover rules', 'When and how to offer owner or human support.'],
+                ['knowledgeRules', 'Knowledge/data rules', 'How the guide uses listing and local information.'],
+                ['ctaSettings', 'CTA settings', 'The next steps the guide may offer.'],
+                ['feedbackSettings', 'Feedback settings', 'How the guide asks for feedback after helping.'],
+              ] as const).map(([field, title, description], index) => (
+                <section className="editor-section" aria-labelledby={`${field}-title`} key={field}>
+                  <div className="section-number">{String(index + 3).padStart(2, '0')}</div>
+                  <div className="section-body">
+                    <div className="editor-section-heading"><div><p className="admin-eyebrow">AGENT CONFIGURATION</p><h2 id={`${field}-title`}>{title}</h2></div></div>
+                    <p className="editor-intro">{description}</p>
+                    <textarea id={field} rows={4} maxLength={field === 'goal' ? 500 : 5000} {...register(field)} aria-label={title} data-testid={`textarea-admin-${field}`} />
+                  </div>
+                </section>
+              ))}
+
             <aside className="admin-save-rail">
               <div className="save-rail-card">
                 <div className="save-rail-icon"><Check size={17} /></div>
@@ -384,6 +457,16 @@ function SettingsEditor({
                   {update.isPending ? <><LoaderCircle className="admin-spin" size={16} /> Saving changes</> : <><Save size={16} /> Save settings</>}
                 </button>
                 <button type="button" className="admin-secondary-button reset-defaults-button" onClick={resetToDefaults} disabled={update.isPending} data-testid="button-reset-admin-defaults"><RotateCcw size={14} /> Reset to defaults</button>
+                <button type="button" className="admin-secondary-button" onClick={() => void loadPromptPreview()} disabled={previewLoading} data-testid="button-preview-agent-prompt">{previewLoading ? 'Loading prompt…' : 'Preview final system prompt'}</button>
+                {previewError && <p className="admin-form-error" role="alert">{previewError}</p>}
+                {promptPreview && <details className="prompt-preview" open><summary>Prompt sent to the agent</summary><pre>{promptPreview}</pre></details>}
+                <div className="agent-test-panel">
+                  <label className="admin-label" htmlFor="agent-test-message">Test agent with the latest saved settings</label>
+                  <input id="agent-test-message" value={testMessage} onChange={(event) => setTestMessage(event.target.value)} maxLength={1200} />
+                  <button type="button" className="admin-secondary-button" onClick={() => void runAgentTest()} disabled={testLoading || update.isPending}>{testLoading ? 'Testing…' : 'Test agent'}</button>
+                  {testError && <p className="admin-form-error" role="alert">{testError}</p>}
+                  {testReply && <p className="agent-test-reply" role="status">{testReply}</p>}
+                </div>
                 {resetNote && <p className="unsaved-note" data-testid="status-admin-reset-note">Defaults loaded. Press Save settings to apply them.</p>}
                 {isDirty && !resetNote && !update.isPending && <p className="unsaved-note" data-testid="status-admin-unsaved">Unsaved changes</p>}
                 {saveError && <p className="admin-form-error save-error" role="alert" data-testid="status-admin-save-error">{saveError}</p>}

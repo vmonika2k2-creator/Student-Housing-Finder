@@ -39,4 +39,10 @@ export interface StudentHousingAgentSettingsInput {
      * @maxLength 500
      */
   goal: string;
+  conversationBehavior: string;
+  guardrails: string;
+  handoverRules: string;
+  knowledgeRules: string;
+  ctaSettings: string;
+  feedbackSettings: string;
 }

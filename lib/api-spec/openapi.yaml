@@ -295,10 +295,16 @@ components:
           type: string
           description: The goal the assistant works toward in conversations. May be blank.
           maxLength: 500
+        conversationBehavior: { type: string, maxLength: 5000 }
+        guardrails: { type: string, maxLength: 5000 }
+        handoverRules: { type: string, maxLength: 5000 }
+        knowledgeRules: { type: string, maxLength: 5000 }
+        ctaSettings: { type: string, maxLength: 2000 }
+        feedbackSettings: { type: string, maxLength: 2000 }
         updatedAt:
           type: string
           format: date-time
-      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal, updatedAt]
+      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, updatedAt]
     StudentHousingAgentSettingsInput:
       type: object
       properties:
@@ -333,5 +339,11 @@ components:
           type: string
           description: The goal the assistant works toward in conversations. May be blank.
           maxLength: 500
+        conversationBehavior: { type: string, maxLength: 5000 }
+        guardrails: { type: string, maxLength: 5000 }
+        handoverRules: { type: string, maxLength: 5000 }
+        knowledgeRules: { type: string, maxLength: 5000 }
+        ctaSettings: { type: string, maxLength: 2000 }
+        feedbackSettings: { type: string, maxLength: 2000 }
       required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
 

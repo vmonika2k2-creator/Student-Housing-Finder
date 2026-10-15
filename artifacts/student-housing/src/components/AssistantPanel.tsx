@@ -47,6 +47,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // On wide screens the page makes room for the open panel instead of sitting under it.
   useEffect(() => {
@@ -73,6 +74,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
       });
       setMessages((current) => [...current, { role: 'user', content: message }, { role: 'assistant', content: response.reply }]);
       setRecommendations(response.recommendedListingIds);
+      requestAnimationFrame(() => inputRef.current?.focus());
     } catch {
       setDraft(message);
     }
@@ -81,6 +83,16 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const recommendationListings = recommendations
     .map((id) => listings.find((listing) => listing.id === id))
     .filter((listing): listing is StudentHousingListing => Boolean(listing));
+  const lastReply = messages.at(-1)?.role === 'assistant' ? messages.at(-1)?.content.toLowerCase() ?? '' : '';
+  const replyChips = lastReply.includes('how close') || lastReply.includes('how far') || lastReply.includes('distance')
+    ? ['Just a walk away', 'Under 1 km', '2–3 km away', 'Up to 5 km', 'Anywhere is fine']
+    : lastReply.includes('property type') || lastReply.includes('private room, shared room')
+      ? ['Flat', 'PG', 'Hostel', 'Shared room']
+      : lastReply.includes('food') || lastReply.includes('mess')
+        ? ['Attached mess', 'Tiffin', 'Kitchen to cook', 'No food needed']
+        : lastReply.includes('must-have') || lastReply.includes('wifi')
+          ? ['Wi-Fi', 'Attached washroom', 'Furnished', 'Safety features']
+          : [];
 
   function openRecommendation(id: string) {
     onOpenChange(false);
@@ -138,6 +150,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
             </div>
           )}
           {chat.isError && <div className="chat-error" role="alert" data-testid="status-chat-error">That didn’t go through. Check your connection and try again.</div>}
+          {replyChips.length > 0 && <div className="quick-prompts" aria-label="Suggested replies">{replyChips.map((option) => <button type="button" key={option} disabled={chat.isPending} onClick={() => void sendMessage(option)}>{option}</button>)}</div>}
           {messages.length === 0 && <div className="quick-prompts">
             <p className="eyebrow">Try asking</p>
             {prompts.map((prompt, index) => <button type="button" key={prompt} data-testid={`button-quick-prompt-${index}`} disabled={chat.isPending || listings.length === 0} onClick={() => void sendMessage(prompt)}>{prompt}<ArrowRight size={13} /></button>)}
@@ -145,7 +158,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           <div className="chat-footer">
           <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
             <label htmlFor="chat-input" className="sr-only">Ask about student housing</label>
-            <textarea id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
+            <textarea ref={inputRef} id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
             <button type="submit" disabled={!draft.trim() || chat.isPending || listings.length === 0} aria-label="Send message" data-testid="button-send-chat">
               {chat.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
             </button>

@@ -14,6 +14,12 @@ export type AgentSettings = {
   empathyExamples: string[];
   /** The goal the assistant works toward. May be blank. */
   goal: string;
+  conversationBehavior: string;
+  guardrails: string;
+  handoverRules: string;
+  knowledgeRules: string;
+  ctaSettings: string;
+  feedbackSettings: string;
   updatedAt: Date;
 };
 
@@ -48,12 +54,18 @@ export const DEFAULT_GOAL =
 
 export const DEFAULT_AGENT_SETTINGS: AgentSettingsInput = {
   persona:
-    "You are a practical, friendly housing guide for students moving to a new city. Help them weigh budget, privacy, shared living, transit, and amenities, and keep the student in charge of the decision.",
-  tone: "Warm, plain-spoken, and calm. Explain trade-offs without pressure.",
+    "You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.",
+  tone: "Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.",
   empathyScale: 5,
   goalOrientationScale: 5,
   empathyExamples: DEFAULT_EMPATHY_EXAMPLES,
   goal: DEFAULT_GOAL,
+  conversationBehavior: "Follow this flow: opening; understand intent; ask only missing opening details; answer directly; clarify only when it changes recommendations; repair unclear or contradictory messages; expand only when relevant; check fulfilment; offer one relevant next step; acknowledge completion and ask for feedback. Ask one question at a time. Keep replies short: direct answer, one useful detail, one next step. Ask in priority order: property type, college/area, distance, budget, move-in timing, occupancy, food, must-haves. Expand priorities in order: safety, water/electricity/Wi-Fi, food, washroom/furnishing, nearby services, transport, lifestyle amenities.",
+  guardrails: "Never promise absolute safety or guarantee deposit refunds, agreements, eviction outcomes, owner trustworthiness, rent, or booking approval. Share only supplied, verified facts and be clear about uncertainty. Never invent listings, availability, distances, shops, menus, rules or safety arrangements. Do not discriminate or filter by caste, religion, community, gender identity, region/state, or food preference. Do not request sensitive information such as Aadhaar/PAN, bank or medical details, identity documents, or private photos. Ask permission before sharing contact details. For legal/financial decisions, recommend written confirmation and a trusted expert.",
+  handoverRules: "If a student asks for a human, owner contact, call, or escalation, offer promptly and do not argue. Before contacting an owner, confirm what details may be shared. For confusion, simplify once, then offer a human. For frustration, acknowledge briefly and offer a human immediately. For safety concerns, acknowledge without minimising, share only verified security details, and offer human support.",
+  knowledgeRules: "Treat property records and supplied sources as the only source of listing-specific facts. Say when information is unavailable, uncertain, or outdated and offer to check with the property contact or a human. Distances, commute times, amenities and policies must not be inferred. Clearly distinguish illustrative/demo records from verified inventory.",
+  ctaSettings: "Offer only one relevant next step: show details, compare up to three options, schedule a visit, request owner callback, show nearby map, save shortlist, or talk to a human. Get explicit permission before owner contact or sharing personal details.",
+  feedbackSettings: "After the request is fulfilled, acknowledge briefly and ask how helpful the conversation was. Offer Very helpful, Somewhat helpful, and Not helpful.",
 };
 
 function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
@@ -70,6 +82,12 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
     goalOrientationScale: row.goalOrientationScale,
     empathyExamples,
     goal: row.goal ?? DEFAULT_GOAL,
+    conversationBehavior: row.conversationBehavior ?? DEFAULT_AGENT_SETTINGS.conversationBehavior,
+    guardrails: row.guardrails ?? DEFAULT_AGENT_SETTINGS.guardrails,
+    handoverRules: row.handoverRules ?? DEFAULT_AGENT_SETTINGS.handoverRules,
+    knowledgeRules: row.knowledgeRules ?? DEFAULT_AGENT_SETTINGS.knowledgeRules,
+    ctaSettings: row.ctaSettings ?? DEFAULT_AGENT_SETTINGS.ctaSettings,
+    feedbackSettings: row.feedbackSettings ?? DEFAULT_AGENT_SETTINGS.feedbackSettings,
     updatedAt: row.updatedAt,
   };
 }
@@ -188,4 +206,21 @@ export function buildBehaviorInstructions(settings: AgentSettingsInput): string 
     `Initiative: ${settings.goalOrientationScale}/10 (0 = passive, 10 = goal-oriented). ${initiativeGuidance(settings.goalOrientationScale)}${goal ? "" : " No goal is set, so treat the student's next housing decision as the goal."}`,
   );
   return lines.join("\n");
+}
+
+export function buildSystemPrompt(settings: AgentSettingsInput): string {
+  const text = (value: string | undefined, fallback: string) => value?.trim() || fallback;
+  return [
+    "PERSONALITY", text(settings.persona, DEFAULT_AGENT_SETTINGS.persona), text(settings.tone, DEFAULT_AGENT_SETTINGS.tone),
+    `Empathy: ${settings.empathyScale}/10. Initiative: ${settings.goalOrientationScale}/10.`,
+    buildBehaviorInstructions(settings),
+    "AGENT BEHAVIOUR", text(settings.conversationBehavior, DEFAULT_AGENT_SETTINGS.conversationBehavior),
+    "GUARDRAILS", text(settings.guardrails, DEFAULT_AGENT_SETTINGS.guardrails),
+    "HANDOVER RULES", text(settings.handoverRules, DEFAULT_AGENT_SETTINGS.handoverRules),
+    "CONVERSATION GOAL", text(settings.goal, DEFAULT_GOAL),
+    "KNOWLEDGE / DATA RULES", text(settings.knowledgeRules, DEFAULT_AGENT_SETTINGS.knowledgeRules),
+    "CTA SETTINGS", text(settings.ctaSettings, DEFAULT_AGENT_SETTINGS.ctaSettings),
+    "FEEDBACK SETTINGS", text(settings.feedbackSettings, DEFAULT_AGENT_SETTINGS.feedbackSettings),
+    "OUTPUT FORMAT", "Use concise natural language suitable for a mobile screen. Ask no more than one question at a time. Recommend zero to three IDs only from supplied listings. Do not use a fixed bullet format.",
+  ].join("\n\n");
 }
