@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import type { StudentHousingListing } from '@workspace/api-client-react';
 import { ListingCard } from '@/components/ListingCard';
 import { AssistantPanel } from '@/components/AssistantPanel';
-import { ArrowDown, ArrowRight, Bookmark, Check, ChevronDown, CircleHelp, Compass, MapPin, SlidersHorizontal, Sparkles, TrainFront } from 'lucide-react';
+import { ArrowDown, ArrowRight, Bookmark, Check, ChevronDown, CircleHelp, Compass, Heart, MapPin, SlidersHorizontal, Sparkles, TrainFront } from 'lucide-react';
 import { useLocation, Router as WouterRouter, Route, Switch } from 'wouter';
 import { type ReactNode } from 'react';
 import NotFound from '@/pages/not-found';
@@ -26,6 +26,41 @@ const amenityOptions = [
 ] as const;
 
 type RentalSearchResponse = { listings: StudentHousingListing[]; total: number; page: number; totalPages: number; note?: string };
+type SavedListingRecord = { id: string; savedAt: string; listing: StudentHousingListing | null };
+const SAVED_STORAGE_KEY = 'student-housing-saved';
+
+function readSavedListings(): SavedListingRecord[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(SAVED_STORAGE_KEY) ?? '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((entry): SavedListingRecord[] => {
+      if (typeof entry === 'string') return [{ id: entry, savedAt: '', listing: null }];
+      if (typeof entry !== 'object' || entry === null || !('id' in entry) || typeof entry.id !== 'string') return [];
+      const listing = 'listing' in entry && typeof entry.listing === 'object' && entry.listing !== null && 'id' in entry.listing
+        ? entry.listing as StudentHousingListing
+        : null;
+      return [{ id: entry.id, savedAt: 'savedAt' in entry && typeof entry.savedAt === 'string' ? entry.savedAt : '', listing }];
+    });
+  } catch { return []; }
+}
+
+function useSavedListings() {
+  const [records, setRecords] = useState<SavedListingRecord[]>(readSavedListings);
+  useEffect(() => { localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(records)); }, [records]);
+  return [records, setRecords] as const;
+}
+
+function ListingComparison({ listings, onRemove }: { listings: StudentHousingListing[]; onRemove: (id: string) => void }) {
+  if (listings.length === 0) return null;
+  return <div className="shortlist-compare" data-testid="panel-shortlist-comparison">
+    <div className="compare-panel-heading"><div><p className="eyebrow">SIDE-BY-SIDE</p><h3>Compare your shortlist</h3></div><span>{listings.length}/3 places</span></div>
+    {listings.length < 2 && <p>Add one more place to compare rent, furnishing, deposit, and features side by side.</p>}
+    {listings.length > 1 && <div className="shortlist-compare-scroll"><table><thead><tr><th>Place</th><th>Rent/month</th><th>Type and BHK</th><th>Furnishing</th><th>Deposit</th><th>Distance</th><th>Area</th><th>Property amenities</th><th>Action</th></tr></thead><tbody>
+      {listings.map((listing) => <tr key={listing.id}><th scope="row">{listing.title}<br /><small>{listing.neighborhood}, {listing.city}</small></th><td>{listing.monthlyRent === null ? 'Not listed' : `₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}`}</td><td>{listing.propertyType ?? listing.roomType}{listing.bedrooms ? ` · ${listing.bedrooms}` : ''}</td><td>{listing.furnishingStatus ?? (listing.furnished === null ? 'Not listed' : listing.furnished ? 'Furnished' : 'Unfurnished')}</td><td>{listing.deposit ?? 'Not listed'}</td><td>{listing.distanceKm == null ? 'Not provided' : `${listing.distanceKm} km from landmark`}</td><td>{listing.area ?? 'Not listed'}</td><td>{listing.amenities.length ? listing.amenities.slice(0, 3).join(', ') : 'Not listed'}</td><td><button type="button" className="compare-remove" onClick={() => onRemove(listing.id)}>Remove</button></td></tr>)}
+    </tbody></table></div>}
+    <p>Source listings only; confirm current availability and terms with the listing contact.</p>
+  </div>;
+}
 
 function Home() {
   const [listings, setListings] = useState<StudentHousingListing[]>([]);
@@ -42,22 +77,19 @@ function Home() {
   const [bedrooms, setBedrooms] = useState('');
   const [furnishing, setFurnishing] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
-  const [savedOnly, setSavedOnly] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [saved, setSaved] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('student-housing-saved') ?? '[]') as string[]; }
-    catch { return []; }
-  });
+  const [savedRecords, setSavedRecords] = useSavedListings();
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const savedIds = useMemo(() => savedRecords.map((record) => record.id), [savedRecords]);
 
   const filtered = useMemo(() => listings.filter((listing) =>
     (!propertyType || listing.propertyType === propertyType) &&
     (!bedrooms || listing.bedrooms === bedrooms) &&
     (!minRent || listing.monthlyRent === null || listing.monthlyRent >= Number(minRent)) &&
     (!maxRent || listing.monthlyRent === null || listing.monthlyRent <= Number(maxRent)) &&
-    (!furnishing || listing.furnishingStatus === furnishing) &&
-    (!savedOnly || saved.includes(listing.id))
-  ), [listings, propertyType, bedrooms, minRent, maxRent, furnishing, savedOnly, saved]);
-  const sortedSavedListings = listings.filter((listing) => saved.includes(listing.id));
+    (!furnishing || listing.furnishingStatus === furnishing)
+  ), [listings, propertyType, bedrooms, minRent, maxRent, furnishing]);
+  const comparedListings = comparisonIds.flatMap((id) => listings.filter((listing) => listing.id === id));
 
   async function searchRentals(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -84,6 +116,11 @@ function Home() {
       if (!response.ok) throw new Error('error' in payload ? payload.error ?? `Search failed (${response.status}).` : `Search failed (${response.status}).`);
       const result = payload as RentalSearchResponse;
       setListings(result.listings);
+      setSavedRecords((current) => {
+        const latest = new Map(result.listings.map((listing) => [listing.id, listing]));
+        return current.map((record) => latest.has(record.id) ? { ...record, listing: latest.get(record.id) ?? record.listing } : record);
+      });
+      setComparisonIds([]);
       setTotalResults(result.total);
       setSearchNote(result.note ?? '');
     } catch (error) {
@@ -95,12 +132,15 @@ function Home() {
     }
   }
 
-  function toggleSaved(id: string) {
-    setSaved((current) => {
-      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
-      localStorage.setItem('student-housing-saved', JSON.stringify(next));
-      return next;
-    });
+  function toggleSaved(listing: StudentHousingListing) {
+    setSavedRecords((current) => current.some((record) => record.id === listing.id)
+      ? current.filter((record) => record.id !== listing.id)
+      : [...current, { id: listing.id, savedAt: new Date().toISOString(), listing }]);
+  }
+  function toggleCompare(id: string) {
+    setComparisonIds((current) => current.includes(id)
+      ? current.filter((item) => item !== id)
+      : current.length >= 3 ? current : [...current, id]);
   }
   function showListing(id: string) {
     document.getElementById(`listing-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -108,7 +148,7 @@ function Home() {
   function resetFilters() {
     setLocation('Pune'); setLandmark(''); setMinRent(''); setMaxRent('30000');
     setPropertyType(''); setBedrooms(''); setFurnishing(''); setAmenities([]);
-    setSavedOnly(false); setListings([]); setTotalResults(0); setHasSearched(false); setSearchError('');
+    setListings([]); setTotalResults(0); setHasSearched(false); setSearchError(''); setComparisonIds([]);
   }
 
   return (
@@ -122,9 +162,7 @@ function Home() {
           <a href="#homes" className="nav-link active" data-testid="link-browse-homes">Browse homes</a>
           <button type="button" className="nav-link nav-guide-link" onClick={() => setAssistantOpen(true)} data-testid="button-open-guide-nav">Ask the guide</button>
         </nav>
-        <button type="button" className={`saved-nav ${savedOnly ? 'selected' : ''}`} onClick={() => setSavedOnly((value) => !value)} data-testid="button-show-saved">
-          <Bookmark size={16} fill={savedOnly ? 'currentColor' : 'none'} /> Saved <span>{saved.length}</span>
-        </button>
+        <a className="saved-nav" href="/saved" data-testid="button-show-saved"><Bookmark size={16} /> Saved <span>{savedRecords.length}</span></a>
       </header>
 
       <main>
@@ -181,30 +219,24 @@ function Home() {
             </form>
 
             <div className="results-toolbar">
-              <p data-testid="text-results-count"><strong>{filtered.length}</strong> {filtered.length === 1 ? 'place' : 'places'} shown{hasSearched ? ` · ${new Intl.NumberFormat('en-IN').format(totalResults)} total matches` : ''}{savedOnly ? ' · saved only' : ''}</p>
+              <p data-testid="text-results-count"><strong>{filtered.length}</strong> {filtered.length === 1 ? 'place' : 'places'} shown{hasSearched ? ` · ${new Intl.NumberFormat('en-IN').format(totalResults)} total matches` : ''}</p>
               <button type="button" className="clear-filters" onClick={resetFilters} data-testid="button-reset-filters">Reset filters</button>
             </div>
-            {savedOnly && sortedSavedListings.length > 1 && <div className="shortlist-compare" data-testid="panel-shortlist-comparison">
-              <h3>Compare your shortlist</h3>
-              <div className="shortlist-compare-scroll"><table><thead><tr><th>Place</th><th>Rent/month</th><th>Type and BHK</th><th>Deposit</th><th>Distance</th><th>Property amenities</th></tr></thead><tbody>
-                {sortedSavedListings.map((listing) => <tr key={listing.id}><th scope="row">{listing.neighborhood}</th><td>{listing.monthlyRent === null ? 'Not listed' : `₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}`}</td><td>{listing.propertyType ?? listing.roomType}{listing.bedrooms ? ` · ${listing.bedrooms}` : ''}<br />{listing.furnishingStatus ?? (listing.furnished === null ? 'Furnishing not listed' : listing.furnished ? 'Furnished' : 'Unfurnished')}</td><td>{listing.deposit ?? 'Not listed'}</td><td>{listing.distanceKm == null ? 'Not provided' : `${listing.distanceKm} km from landmark`}</td><td>{listing.amenities.length ? listing.amenities.slice(0, 2).join(', ') : 'No property amenities listed'}</td></tr>)}
-              </tbody></table></div>
-              <p>Compare the returned property facts; Square Yards does not verify availability for this app.</p>
-            </div>}
+            {comparisonIds.length > 0 && <ListingComparison listings={comparedListings} onRemove={toggleCompare} />}
 
             {isLoading && <div className="listing-grid" aria-label="Loading homes" data-testid="status-listings-loading">{[0, 1, 2, 3].map((item) => <div className="skeleton-card" key={item}><div className="skeleton skeleton-image" /><div className="skeleton-copy"><div className="skeleton skeleton-line wide" /><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /></div></div>)}</div>}
             {searchError && <div className="state-card error-state" role="alert" data-testid="status-listings-error"><div className="state-icon"><CircleHelp size={22} /></div><h3>Live listings couldn’t be loaded.</h3><p>{searchError}</p><button type="button" className="button-primary" onClick={() => void searchRentals()} data-testid="button-retry-listings">Try again <ArrowRight size={15} /></button></div>}
             {!isLoading && !searchError && hasSearched && filtered.length === 0 && <div className="state-card empty-state" data-testid="status-listings-empty"><div className="state-icon"><Sparkles size={22} /></div><h3>We couldn’t find matching rentals.</h3><p>Try widening the rent range, removing an amenity, or searching another Pune locality. Square Yards’ amenity data can be sparse.</p><button type="button" className="button-primary" onClick={resetFilters} data-testid="button-empty-reset">Reset search <ArrowRight size={15} /></button></div>}
             {!isLoading && !searchError && !hasSearched && <div className="state-card empty-state" data-testid="status-listings-ready"><div className="state-icon"><Sparkles size={22} /></div><h3>Search current Pune rental listings.</h3><p>Choose a locality, budget, and any must-haves above, then search Square Yards.</p></div>}
-            {!isLoading && !searchError && filtered.length > 0 && <div className="listing-grid" data-testid="grid-listings">{filtered.map((listing) => <ListingCard key={listing.id} listing={listing} saved={saved.includes(listing.id)} onToggleSaved={toggleSaved} />)}</div>}
+            {!isLoading && !searchError && filtered.length > 0 && <div className="listing-grid" data-testid="grid-listings">{filtered.map((listing) => <ListingCard key={listing.id} listing={listing} saved={savedIds.includes(listing.id)} onToggleSaved={toggleSaved} isCompared={comparisonIds.includes(listing.id)} onToggleCompare={toggleCompare} compareDisabled={comparisonIds.length >= 3} />)}</div>}
 
             {searchNote && <p className="search-source-note" data-testid="text-search-source-note">{searchNote}</p>}
 
             <div className="compare-note" data-testid="text-compare-guidance"><span className="note-mark">i</span><p><strong>A useful reminder:</strong> the cheapest room isn’t always the lowest-cost choice. Check deposits, meals, late-night travel, and what’s included before you decide.</p></div>
-            {sortedSavedListings.length > 0 && <div className="saved-summary" data-testid="text-saved-summary"><Bookmark size={15} fill="currentColor" /> You’ve kept {sortedSavedListings.length} {sortedSavedListings.length === 1 ? 'place' : 'places'} on your shortlist. Use Saved above to compare them again.</div>}
+            {savedRecords.length > 0 && <div className="saved-summary" data-testid="text-saved-summary"><Bookmark size={15} fill="currentColor" /> You’ve saved {savedRecords.length} {savedRecords.length === 1 ? 'place' : 'places'}. Open Saved above to see or compare them.</div>}
           </div>
         </section>
-        <AssistantPanel listings={listings} onShowListing={showListing} open={assistantOpen} onOpenChange={setAssistantOpen} />
+        <AssistantPanel listings={listings} savedIds={savedIds} onToggleSaved={toggleSaved} comparisonIds={comparisonIds} onToggleCompare={toggleCompare} onShowListing={showListing} open={assistantOpen} onOpenChange={setAssistantOpen} />
 
         <section className="closing-note" data-testid="panel-next-steps">
           <div className="closing-mark"><Sparkles size={19} /></div>
@@ -217,8 +249,42 @@ function Home() {
   );
 }
 
+function SavedHomesPage() {
+  const [records, setRecords] = useSavedListings();
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const listings = records.flatMap((record) => record.listing ? [record.listing] : []);
+  const comparedListings = comparisonIds.flatMap((id) => listings.filter((listing) => listing.id === id));
+
+  function removeSaved(id: string) {
+    setRecords((current) => current.filter((record) => record.id !== id));
+    setComparisonIds((current) => current.filter((item) => item !== id));
+  }
+  function toggleCompare(id: string) {
+    setComparisonIds((current) => current.includes(id)
+      ? current.filter((item) => item !== id)
+      : current.length >= 3 ? current : [...current, id]);
+  }
+
+  return <div className="app-shell saved-page">
+    <header className="topbar">
+      <a className="brand" href="/" data-testid="link-saved-home"><span className="brand-symbol"><Compass size={19} strokeWidth={2.2} /></span><span>room<span className="brand-dot">.</span>for<small>student housing, less guesswork</small></span></a>
+      <nav className="topnav" aria-label="Main navigation"><a href="/" className="nav-link" data-testid="link-browse-homes">Browse homes</a><span className="nav-link active" aria-current="page">Saved places</span></nav>
+      <span className="saved-nav selected"><Bookmark size={16} /> Saved <span>{records.length}</span></span>
+    </header>
+    <main className="saved-page-main">
+      <div className="section-heading"><div><p className="eyebrow"><span className="heading-line" /> YOUR SHORTLIST</p><h1>Saved places</h1></div><p className="section-aside">Your saved listings stay in this browser<br />so you can come back and compare.</p></div>
+      {comparisonIds.length > 0 && <ListingComparison listings={comparedListings} onRemove={toggleCompare} />}
+      {listings.length > 0 && <div className="listing-grid" data-testid="grid-saved-listings">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} saved onToggleSaved={() => removeSaved(listing.id)} isCompared={comparisonIds.includes(listing.id)} onToggleCompare={toggleCompare} compareDisabled={comparisonIds.length >= 3} />)}</div>}
+      {records.some((record) => !record.listing) && <div className="saved-legacy-note" role="status"><Bookmark size={16} /><p>Some older saved items contain only their IDs, not listing details. Search again on Browse homes; matching saved listings will refill their details here.</p></div>}
+      {records.length === 0 && <div className="state-card empty-state" data-testid="status-saved-empty"><div className="state-icon"><Heart size={22} /></div><h2>No saved places yet</h2><p>On Browse homes, choose <strong>Save for later</strong> on any listing. It will appear here, even after you leave the page.</p><a className="button-primary" href="/">Browse current listings <ArrowRight size={15} /></a></div>}
+      <div className="saved-availability-note"><CircleHelp size={16} /><p>These are saved Square Yards listings. Their current availability is not verified here; use each listing link to check with its contact.</p></div>
+    </main>
+    <footer className="footer"><a className="brand footer-brand" href="/" data-testid="link-footer-home"><span className="brand-symbol"><Compass size={16} /></span><span>room<span className="brand-dot">.</span>for</span></a><p>Made for the move away from home.</p><span>Saved on this browser</span></footer>
+  </div>;
+}
+
 function Router() {
-  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/admin" component={Admin} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
+  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/saved" component={SavedHomesPage} /><Route path="/admin" component={Admin} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
 }
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
