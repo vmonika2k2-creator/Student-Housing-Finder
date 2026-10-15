@@ -46,7 +46,6 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
   const [moveInUrgency, setMoveInUrgency] = useState<'flexible' | 'soon' | 'urgent'>('flexible');
-  const [responseEmpathy, setResponseEmpathy] = useState(6);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
@@ -72,9 +71,9 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
         data: {
           conversationId,
           moveInUrgency,
-          responseEmpathy,
           message,
-          history: messages.map(({ role, content }) => ({ role, content })),
+          // Keep request history within the API's 12-message limit as the conversation grows.
+          history: messages.slice(-12).map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),
         },
       });
@@ -129,7 +128,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           </div>
           <div className="assistant-preferences" data-testid="panel-assistant-preferences">
             <label>Move-in timing<select value={moveInUrgency} onChange={(event) => setMoveInUrgency(event.target.value as 'flexible' | 'soon' | 'urgent')}><option value="flexible">Flexible</option><option value="soon">Within a month</option><option value="urgent">As soon as possible</option></select></label>
-            <label>Response empathy <span>{responseEmpathy}/10</span><input type="range" min="1" max="10" value={responseEmpathy} onChange={(event) => setResponseEmpathy(Number(event.target.value))} aria-label="Response empathy level" /></label>
+            <span className="urgency-note">I’ll adjust how supportive I am based on your timing.</span>
           </div>
           {messages.length === 0 ? (
             <div className="assistant-welcome" data-testid="text-assistant-intro">

@@ -47,7 +47,7 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
 
   const { message, history, listingIds } = parsedBody.data;
   const moveInUrgency = parsedBody.data.moveInUrgency ?? "flexible";
-  const responseEmpathy = parsedBody.data.responseEmpathy ?? 6;
+  const responseEmpathy = moveInUrgency === "urgent" ? 8 : moveInUrgency === "soon" ? 6 : 4;
   const availableListings = sampleListings.filter((listing) =>
     listingIds.includes(listing.id),
   );

@@ -89,6 +89,12 @@ router.get("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
     // The database library wraps the real failure in `cause`, so look there first.
     const root = (error as { cause?: unknown })?.cause ?? error;
     const code = (root as { code?: unknown })?.code;
+    if (code === "42703") {
+      res.status(503).json({
+        error: "The settings database schema is out of date. Sync the latest schema in development, then Publish the app to update production.",
+      });
+      return;
+    }
     const reason = root instanceof Error && root.message
       ? root.message.split("\n")[0].slice(0, 160)
       : "Unknown error";
