@@ -64,6 +64,32 @@ paths:
           description: The message limit has been reached temporarily
         "502":
           description: The assistant could not complete the request
+  /housing/search:
+    post:
+      operationId: searchStudentHousingRentals
+      tags: [student-housing]
+      summary: Search live Pune rentals through Square Yards MCP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentHousingRentalSearchInput"
+      responses:
+        "200":
+          description: Rental listings and source-provided property details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentHousingRentalSearchResponse"
+        "400":
+          description: Search criteria are invalid
+        "422":
+          description: A requested Pune landmark could not be resolved
+        "502":
+          description: Square Yards MCP search failed
+        "504":
+          description: Square Yards MCP search timed out
   /housing/admin/session:
     get:
       operationId: getHousingAdminSession
@@ -178,17 +204,32 @@ components:
         neighborhood:
           type: string
         monthlyRent:
-          type: number
+          type: [number, 'null']
         currency:
           type: string
           enum: [INR]
         roomType:
           type: string
-          enum: [Shared room, Private room, Studio]
         furnished:
-          type: boolean
+          type: [boolean, 'null']
+        furnishingStatus:
+          type: [string, 'null']
+        propertyType:
+          type: [string, 'null']
+        bedrooms:
+          type: [string, 'null']
+        deposit:
+          type: [string, 'null']
+        area:
+          type: [string, 'null']
+        distanceKm:
+          type: [number, 'null']
+        listingUrl:
+          type: [string, 'null']
+        isVerified:
+          type: [boolean, 'null']
         transitMinutes:
-          type: integer
+          type: [integer, 'null']
         amenities:
           type: array
           items:
@@ -210,6 +251,55 @@ components:
         - amenities
         - imageUrl
         - tag
+    StudentHousingRentalSearchInput:
+      type: object
+      properties:
+        location:
+          type: string
+          minLength: 1
+          maxLength: 120
+        landmark:
+          type: string
+          maxLength: 120
+          description: Optional Pune landmark to resolve with search_entities and search within its coordinates.
+        minMonthlyRent:
+          type: integer
+          minimum: 0
+        maxMonthlyRent:
+          type: integer
+          minimum: 0
+        bedrooms:
+          type: string
+          description: BHK or unit label supported by search_properties.
+        propertyType:
+          type: string
+          description: Exact property type name supported by search_properties.
+        furnishing:
+          type: string
+          enum: [Furnished, Semi-Furnished, Unfurnished]
+        amenities:
+          type: array
+          maxItems: 4
+          items:
+            type: string
+            enum: [parking, lift, gym, security]
+      required: [location]
+    StudentHousingRentalSearchResponse:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/StudentHousingListing"
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+        note:
+          type: string
+      required: [listings, total, page, totalPages]
     StudentHousingChatMessage:
       type: object
       properties:

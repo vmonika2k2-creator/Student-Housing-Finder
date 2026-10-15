@@ -6,19 +6,26 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StudentHousingListingCurrency } from './studentHousingListingCurrency';
-import type { StudentHousingListingRoomType } from './studentHousingListingRoomType';
 
 export interface StudentHousingListing {
   id: string;
   title: string;
   city: string;
   neighborhood: string;
-  monthlyRent: number;
+  monthlyRent: number | null;
   currency: StudentHousingListingCurrency;
-  roomType: StudentHousingListingRoomType;
-  furnished: boolean;
-  transitMinutes: number;
+  roomType: string;
+  furnished: boolean | null;
+  transitMinutes: number | null;
   amenities: string[];
   imageUrl: string;
   tag: string;
+  furnishingStatus?: string | null;
+  propertyType?: string | null;
+  bedrooms?: string | null;
+  deposit?: string | null;
+  area?: string | null;
+  distanceKm?: number | null;
+  listingUrl?: string | null;
+  isVerified?: boolean | null;
 }
