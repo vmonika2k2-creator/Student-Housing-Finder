@@ -43,6 +43,7 @@ const prompts = ['Show me private rooms under ₹15,000', 'What feels easiest fo
 
 export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
@@ -67,6 +68,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
     try {
       const response = await chat.mutateAsync({
         data: {
+          conversationId,
           message,
           history: messages.map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),

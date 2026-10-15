@@ -223,6 +223,9 @@ components:
     StudentHousingChatInput:
       type: object
       properties:
+        conversationId:
+          type: string
+          format: uuid
         message:
           type: string
           minLength: 1

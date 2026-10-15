@@ -8,6 +8,8 @@
 import type { StudentHousingChatMessage } from './studentHousingChatMessage';
 
 export interface StudentHousingChatInput {
+  /** Stable identifier used to correlate configuration versions for this conversation. */
+  conversationId?: string;
   /**
      * @minLength 1
      * @maxLength 1200

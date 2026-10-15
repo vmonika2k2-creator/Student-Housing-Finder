@@ -66,7 +66,7 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
       .update(buildSystemPrompt(behavior))
       .digest("hex")
       .slice(0, 16);
-    req.log.info({ configurationVersion }, "Using housing assistant configuration");
+    req.log.info({ conversationId: parsedBody.data.conversationId, configurationVersion }, "Using housing assistant configuration");
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       max_completion_tokens: 8192,
