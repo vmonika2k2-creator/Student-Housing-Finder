@@ -20,6 +20,7 @@ import {
   requireAdmin,
 } from "../../lib/adminAuth";
 import { buildSystemPrompt, getAgentSettings, saveAgentSettings } from "../../lib/agentSettings";
+import { getHousingConversation, getStudentName, isConversationFarewell, listHousingConversations, saveConversationFeedback } from "../../lib/conversations";
 
 const router: IRouter = Router();
 const previewOpenAI = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
@@ -77,6 +78,63 @@ router.post("/housing/admin/session", loginLimiter, (req, res): void => {
 router.post("/housing/admin/logout", (_req, res): void => {
   res.clearCookie(ADMIN_COOKIE_NAME, cookieOptions);
   res.json(LogoutHousingAdminResponse.parse({ authenticated: false }));
+});
+
+router.get("/housing/admin/conversations", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const rows = await listHousingConversations();
+    res.json({ conversations: rows.map((row) => {
+      const messages = Array.isArray(row.messages) ? row.messages : [];
+      const lastUser = [...messages].reverse().find((entry) => entry.role === "user");
+      return {
+        id: row.id,
+        studentName: getStudentName(messages) ?? "Student",
+        startedAt: row.createdAt.toISOString(),
+        lastActiveAt: row.updatedAt.toISOString(),
+        messageCount: messages.length,
+        lastMessage: lastUser?.content.slice(0, 220) ?? "",
+        status: lastUser && isConversationFarewell(lastUser.content) ? "Ended" : "In progress",
+        feedback: row.feedback,
+      };
+    }) });
+  } catch (error) {
+    req.log.error({ err: error }, "Could not load housing conversations for admin");
+    res.status(500).json({ error: "Conversation records could not be loaded." });
+  }
+});
+
+router.get("/housing/admin/conversations/:id", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const row = await getHousingConversation(req.params.id);
+    if (!row) { res.status(404).json({ error: "Conversation not found." }); return; }
+    res.json({
+      id: row.id,
+      studentName: getStudentName(row.messages) ?? "Student",
+      startedAt: row.createdAt.toISOString(),
+      lastActiveAt: row.updatedAt.toISOString(),
+      feedback: row.feedback,
+      messages: row.messages,
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Could not load housing conversation details");
+    res.status(500).json({ error: "Conversation details could not be loaded." });
+  }
+});
+
+router.post("/housing/conversations/:id/feedback", async (req, res): Promise<void> => {
+  const feedback = req.body?.feedback;
+  if (typeof feedback !== "string" || !["Very helpful", "Somewhat helpful", "Not helpful"].includes(feedback)) {
+    res.status(400).json({ error: "Choose one of the available feedback options." });
+    return;
+  }
+  try {
+    const saved = await saveConversationFeedback(req.params.id, feedback);
+    if (!saved) { res.status(404).json({ error: "Conversation not found." }); return; }
+    res.json({ feedback });
+  } catch (error) {
+    req.log.warn({ err: error }, "Could not save conversation feedback");
+    res.status(500).json({ error: "Feedback could not be saved." });
+  }
 });
 
 router.get("/housing/admin/agent-settings", requireAdmin, async (req, res): Promise<void> => {
