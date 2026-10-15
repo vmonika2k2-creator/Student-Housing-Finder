@@ -287,4 +287,4 @@ body { transition: padding-right .2s ease; }
 .shortlist-compare p { margin: 10px 0 0; color: #6f786b; font-size: 11px; }
 .recommendation-link span { display: grid; gap: 3px; text-align: left; }
 .recommendation-link small + small { color: #687365; line-height: 1.4; }
-@media (max-width: 520px) { .assistant-preferences { grid-template-columns: 1fr; } }
+
