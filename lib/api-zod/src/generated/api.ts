@@ -53,7 +53,6 @@ export const sendStudentHousingChatBodyListingIdsMax = 20;
 export const SendStudentHousingChatBody = zod.object({
   "conversationId": zod.string().uuid().optional(),
   "moveInUrgency": zod.enum(['flexible', 'soon', 'urgent']).optional(),
-  "responseEmpathy": zod.number().int().min(1).max(10).optional(),
   "message": zod.string().min(1).max(sendStudentHousingChatBodyMessageMax),
   "history": zod.array(zod.object({
   "role": zod.enum(['user', 'assistant']),

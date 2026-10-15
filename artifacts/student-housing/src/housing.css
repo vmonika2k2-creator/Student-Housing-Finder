@@ -271,11 +271,9 @@ body { transition: padding-right .2s ease; }
 }
 
 .chat-end { height: 1px; scroll-margin-bottom: 210px; }
-.assistant-preferences { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; padding: 10px 12px; border: 1px solid #d9e1d5; border-radius: 8px; background: #f8f8f1; }
+.assistant-preferences { display: grid; grid-template-columns: 1fr; gap: 7px; margin: 12px 0; padding: 10px 12px; border: 1px solid #d9e1d5; border-radius: 8px; background: #f8f8f1; }
 .assistant-preferences label { display: grid; gap: 5px; color: #536252; font-size: 11px; font-weight: 700; }
 .assistant-preferences select { min-height: 34px; padding: 5px 8px; border: 1px solid #d5ddd1; border-radius: 5px; background: white; color: #34463a; }
-.assistant-preferences input[type="range"] { width: 100%; accent-color: #39634e; }
-.assistant-preferences label span { font-weight: 500; }
 .listing-why { margin: 12px 0; padding: 9px 10px; border-radius: 7px; background: #f4f5ed; color: #4d5e50; font-size: 12px; line-height: 1.45; }
 .listing-why summary { cursor: pointer; font-weight: 700; }
 .listing-why p { margin: 7px 0 0; }
@@ -287,4 +285,10 @@ body { transition: padding-right .2s ease; }
 .shortlist-compare p { margin: 10px 0 0; color: #6f786b; font-size: 11px; }
 .recommendation-link span { display: grid; gap: 3px; text-align: left; }
 .recommendation-link small + small { color: #687365; line-height: 1.4; }
-@media (max-width: 520px) { .assistant-preferences { grid-template-columns: 1fr; } }
+.urgency-note { color: #6f786b; font-size: 11px; line-height: 1.4; }
+.message-speaker { font-size: 11px; font-weight: 800; letter-spacing: .09em; }
+.chat-message p { font-size: 15px; line-height: 1.65; }
+.chat-message .reply-line { margin-top: 8px; font-size: 15px; font-weight: 600; line-height: 1.58; }
+.reply-list li { font-size: 15px; line-height: 1.6; }
+.chat-message.user p { font-size: 14px; font-weight: 600; }
+.recommendation-box > .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; }
