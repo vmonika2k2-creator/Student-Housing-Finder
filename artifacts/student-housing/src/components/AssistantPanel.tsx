@@ -43,10 +43,14 @@ const prompts = ['Show me private rooms under ₹15,000', 'What feels easiest fo
 
 export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationId] = useState(() => crypto.randomUUID());
   const [draft, setDraft] = useState('');
+  const [moveInUrgency, setMoveInUrgency] = useState<'flexible' | 'soon' | 'urgent'>('flexible');
+  const [responseEmpathy, setResponseEmpathy] = useState(6);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const chat = useSendStudentHousingChat();
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // On wide screens the page makes room for the open panel instead of sitting under it.
   useEffect(() => {
@@ -66,6 +70,9 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
     try {
       const response = await chat.mutateAsync({
         data: {
+          conversationId,
+          moveInUrgency,
+          responseEmpathy,
           message,
           history: messages.map(({ role, content }) => ({ role, content })),
           listingIds: listings.map(({ id }) => id),
@@ -73,6 +80,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
       });
       setMessages((current) => [...current, { role: 'user', content: message }, { role: 'assistant', content: response.reply }]);
       setRecommendations(response.recommendedListingIds);
+      requestAnimationFrame(() => inputRef.current?.focus());
     } catch {
       setDraft(message);
     }
@@ -81,6 +89,16 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
   const recommendationListings = recommendations
     .map((id) => listings.find((listing) => listing.id === id))
     .filter((listing): listing is StudentHousingListing => Boolean(listing));
+  const lastReply = messages.at(-1)?.role === 'assistant' ? messages.at(-1)?.content.toLowerCase() ?? '' : '';
+  const replyChips = lastReply.includes('how close') || lastReply.includes('how far') || lastReply.includes('distance')
+    ? ['Just a walk away', 'Under 1 km', '2–3 km away', 'Up to 5 km', 'Anywhere is fine']
+    : lastReply.includes('property type') || lastReply.includes('private room, shared room')
+      ? ['Flat', 'PG', 'Hostel', 'Shared room']
+      : lastReply.includes('food') || lastReply.includes('mess')
+        ? ['Attached mess', 'Tiffin', 'Kitchen to cook', 'No food needed']
+        : lastReply.includes('must-have') || lastReply.includes('wifi')
+          ? ['Wi-Fi', 'Attached washroom', 'Furnished', 'Safety features']
+          : [];
 
   function openRecommendation(id: string) {
     onOpenChange(false);
@@ -109,6 +127,10 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
             <div><p className="eyebrow">A little help, right here</p><h2>Talk it through</h2></div>
             <span className="online-dot" aria-label="Assistant ready" />
           </div>
+          <div className="assistant-preferences" data-testid="panel-assistant-preferences">
+            <label>Move-in timing<select value={moveInUrgency} onChange={(event) => setMoveInUrgency(event.target.value as 'flexible' | 'soon' | 'urgent')}><option value="flexible">Flexible</option><option value="soon">Within a month</option><option value="urgent">As soon as possible</option></select></label>
+            <label>Response empathy <span>{responseEmpathy}/10</span><input type="range" min="1" max="10" value={responseEmpathy} onChange={(event) => setResponseEmpathy(Number(event.target.value))} aria-label="Response empathy level" /></label>
+          </div>
           {messages.length === 0 ? (
             <div className="assistant-welcome" data-testid="text-assistant-intro">
               <span className="sparkle"><Sparkles size={16} /></span>
@@ -129,7 +151,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
                 <p className="eyebrow">Worth a closer look</p>
                 {recommendationListings.map((listing) => (
                   <button type="button" className="recommendation-link" key={listing.id} data-testid={`button-recommendation-${listing.id}`} onClick={() => openRecommendation(listing.id)}>
-                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo</small></span><ArrowRight size={16} />
+                    <span><strong>{listing.neighborhood}</strong><small>{listing.city} · ₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/mo · {listing.transitMinutes} min to transit</small><small>Why it may fit: {listing.furnished ? 'furnished' : 'unfurnished'} {listing.roomType.toLowerCase()}{listing.amenities.length ? `, with ${listing.amenities.slice(0, 2).join(' and ')}` : ''}.</small></span><ArrowRight size={16} />
                   </button>
                 ))}
               </div>
@@ -138,6 +160,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
             </div>
           )}
           {chat.isError && <div className="chat-error" role="alert" data-testid="status-chat-error">That didn’t go through. Check your connection and try again.</div>}
+          {replyChips.length > 0 && <div className="quick-prompts" aria-label="Suggested replies">{replyChips.map((option) => <button type="button" key={option} disabled={chat.isPending} onClick={() => void sendMessage(option)}>{option}</button>)}</div>}
           {messages.length === 0 && <div className="quick-prompts">
             <p className="eyebrow">Try asking</p>
             {prompts.map((prompt, index) => <button type="button" key={prompt} data-testid={`button-quick-prompt-${index}`} disabled={chat.isPending || listings.length === 0} onClick={() => void sendMessage(prompt)}>{prompt}<ArrowRight size={13} /></button>)}
@@ -145,7 +168,7 @@ export function AssistantPanel({ listings, onShowListing, open, onOpenChange }: 
           <div className="chat-footer">
           <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
             <label htmlFor="chat-input" className="sr-only">Ask about student housing</label>
-            <textarea id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
+            <textarea ref={inputRef} id="chat-input" rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} maxLength={1200} placeholder="Tell me what you're looking for…" data-testid="input-chat-message" />
             <button type="submit" disabled={!draft.trim() || chat.isPending || listings.length === 0} aria-label="Send message" data-testid="button-send-chat">
               {chat.isPending ? <LoaderCircle className="spin" size={17} /> : <Send size={17} />}
             </button>

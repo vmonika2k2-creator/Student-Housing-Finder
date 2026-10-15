@@ -134,6 +134,13 @@ function Home() {
               <p data-testid="text-results-count"><strong>{filtered.length}</strong> {filtered.length === 1 ? 'place' : 'places'} to compare{savedOnly ? ' · saved only' : ''}</p>
               <button type="button" className="clear-filters" onClick={resetFilters} data-testid="button-reset-filters">Reset filters</button>
             </div>
+            {savedOnly && sortedSavedListings.length > 1 && <div className="shortlist-compare" data-testid="panel-shortlist-comparison">
+              <h3>Compare your shortlist</h3>
+              <div className="shortlist-compare-scroll"><table><thead><tr><th>Place</th><th>Rent/month</th><th>Room</th><th>Transit</th><th>Why it may fit</th></tr></thead><tbody>
+                {sortedSavedListings.map((listing) => <tr key={listing.id}><th scope="row">{listing.neighborhood}</th><td>₹{new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}</td><td>{listing.furnished ? 'Furnished' : 'Unfurnished'} {listing.roomType.toLowerCase()}</td><td>{listing.transitMinutes} min</td><td>{listing.amenities.length ? listing.amenities.slice(0, 2).join(', ') : 'Compare rent and room type with your priorities'}</td></tr>)}
+              </tbody></table></div>
+              <p>These details come from illustrative demo listings. Confirm everything with the property contact.</p>
+            </div>}
 
             {isLoading && <div className="listing-grid" aria-label="Loading homes" data-testid="status-listings-loading">{[0, 1, 2, 3].map((item) => <div className="skeleton-card" key={item}><div className="skeleton skeleton-image" /><div className="skeleton-copy"><div className="skeleton skeleton-line wide" /><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /></div></div>)}</div>}
             {isError && <div className="state-card error-state" role="alert" data-testid="status-listings-error"><div className="state-icon"><CircleHelp size={22} /></div><h3>Homes aren’t loading right now.</h3><p>Give it a moment and try again. Your saved places are still here.</p><button type="button" className="button-primary" onClick={() => void refetch()} data-testid="button-retry-listings">Try again <ArrowRight size={15} /></button></div>}

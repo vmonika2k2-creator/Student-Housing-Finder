@@ -223,6 +223,16 @@ components:
     StudentHousingChatInput:
       type: object
       properties:
+        conversationId:
+          type: string
+          format: uuid
+        moveInUrgency:
+          type: string
+          enum: [flexible, soon, urgent]
+        responseEmpathy:
+          type: integer
+          minimum: 1
+          maximum: 10
         message:
           type: string
           minLength: 1
@@ -295,10 +305,27 @@ components:
           type: string
           description: The goal the assistant works toward in conversations. May be blank.
           maxLength: 500
+        conversationBehavior: { type: string, maxLength: 5000 }
+        guardrails: { type: string, maxLength: 5000 }
+        handoverRules: { type: string, maxLength: 5000 }
+        knowledgeRules: { type: string, maxLength: 5000 }
+        ctaSettings: { type: string, maxLength: 2000 }
+        feedbackSettings: { type: string, maxLength: 2000 }
+        integrations:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              type: { type: string, enum: [api, mcp] }
+              label: { type: string, maxLength: 100 }
+              url: { type: string, format: uri, maxLength: 1000 }
+            required: [id, type, label, url]
         updatedAt:
           type: string
           format: date-time
-      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal, updatedAt]
+      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, integrations, updatedAt]
     StudentHousingAgentSettingsInput:
       type: object
       properties:
@@ -333,5 +360,22 @@ components:
           type: string
           description: The goal the assistant works toward in conversations. May be blank.
           maxLength: 500
+        conversationBehavior: { type: string, maxLength: 5000 }
+        guardrails: { type: string, maxLength: 5000 }
+        handoverRules: { type: string, maxLength: 5000 }
+        knowledgeRules: { type: string, maxLength: 5000 }
+        ctaSettings: { type: string, maxLength: 2000 }
+        feedbackSettings: { type: string, maxLength: 2000 }
+        integrations:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              type: { type: string, enum: [api, mcp] }
+              label: { type: string, minLength: 1, maxLength: 100 }
+              url: { type: string, format: uri, maxLength: 1000 }
+            required: [id, type, label, url]
       required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
 

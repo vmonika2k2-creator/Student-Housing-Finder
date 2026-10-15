@@ -51,6 +51,9 @@ export const sendStudentHousingChatBodyListingIdsMax = 20;
 
 
 export const SendStudentHousingChatBody = zod.object({
+  "conversationId": zod.string().uuid().optional(),
+  "moveInUrgency": zod.enum(['flexible', 'soon', 'urgent']).optional(),
+  "responseEmpathy": zod.number().int().min(1).max(10).optional(),
   "message": zod.string().min(1).max(sendStudentHousingChatBodyMessageMax),
   "history": zod.array(zod.object({
   "role": zod.enum(['user', 'assistant']),
@@ -130,6 +133,13 @@ export const GetHousingAdminAgentSettingsResponse = zod.object({
   "goalOrientationScale": zod.number().int().min(getHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(getHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
   "empathyExamples": zod.array(zod.string().max(getHousingAdminAgentSettingsResponseEmpathyExamplesItemMax)).min(getHousingAdminAgentSettingsResponseEmpathyExamplesMin).max(getHousingAdminAgentSettingsResponseEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
   "goal": zod.string().max(getHousingAdminAgentSettingsResponseGoalMax).describe('The goal the assistant works toward in conversations. May be blank.'),
+  "conversationBehavior": zod.string().max(5000).default(''),
+  "guardrails": zod.string().max(5000).default(''),
+  "handoverRules": zod.string().max(5000).default(''),
+  "knowledgeRules": zod.string().max(5000).default(''),
+  "ctaSettings": zod.string().max(2000).default(''),
+  "feedbackSettings": zod.string().max(2000).default(''),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string().max(100), url: zod.string().url().max(1000) })).max(20).default([]),
   "updatedAt": zod.coerce.date()
 })
 
@@ -162,7 +172,14 @@ export const UpdateHousingAdminAgentSettingsBody = zod.object({
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyEmpathyScaleMin).max(updateHousingAdminAgentSettingsBodyEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax),
   "empathyExamples": zod.array(zod.string().max(updateHousingAdminAgentSettingsBodyEmpathyExamplesItemMax)).min(updateHousingAdminAgentSettingsBodyEmpathyExamplesMin).max(updateHousingAdminAgentSettingsBodyEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
-  "goal": zod.string().max(updateHousingAdminAgentSettingsBodyGoalMax).describe('The goal the assistant works toward in conversations. May be blank.')
+  "goal": zod.string().max(updateHousingAdminAgentSettingsBodyGoalMax).describe('The goal the assistant works toward in conversations. May be blank.'),
+  "conversationBehavior": zod.string().max(5000).optional().default(''),
+  "guardrails": zod.string().max(5000).optional().default(''),
+  "handoverRules": zod.string().max(5000).optional().default(''),
+  "knowledgeRules": zod.string().max(5000).optional().default(''),
+  "ctaSettings": zod.string().max(2000).optional().default(''),
+  "feedbackSettings": zod.string().max(2000).optional().default(''),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string().min(1).max(100), url: zod.string().url().max(1000) })).max(20).optional().default([])
 })
 
 export const updateHousingAdminAgentSettingsResponsePersonaMax = 1000;
@@ -191,6 +208,13 @@ export const UpdateHousingAdminAgentSettingsResponse = zod.object({
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
   "empathyExamples": zod.array(zod.string().max(updateHousingAdminAgentSettingsResponseEmpathyExamplesItemMax)).min(updateHousingAdminAgentSettingsResponseEmpathyExamplesMin).max(updateHousingAdminAgentSettingsResponseEmpathyExamplesMax).describe('Example replies for the five empathy stages, in order. Stage 1 covers scale values 0-1, stage 2 covers 2-3, stage 3 covers 4-6, stage 4 covers 7-8, and stage 5 covers 9-10. A stage may be left blank.'),
   "goal": zod.string().max(updateHousingAdminAgentSettingsResponseGoalMax).describe('The goal the assistant works toward in conversations. May be blank.'),
+  "conversationBehavior": zod.string().max(5000),
+  "guardrails": zod.string().max(5000),
+  "handoverRules": zod.string().max(5000),
+  "knowledgeRules": zod.string().max(5000),
+  "ctaSettings": zod.string().max(2000),
+  "feedbackSettings": zod.string().max(2000),
+  "integrations": zod.array(zod.object({ id: zod.string().uuid(), type: zod.enum(['api', 'mcp']), label: zod.string(), url: zod.string().url() })).max(20),
   "updatedAt": zod.coerce.date()
 })
 

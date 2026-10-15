@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import OpenAI from "openai";
+import { createHash } from "node:crypto";
 import {
   ListStudentHousingListingsResponse,
   SendStudentHousingChatBody,
@@ -10,7 +11,7 @@ import { sampleListings } from "./listings";
 import adminRouter from "./admin";
 import {
   DEFAULT_AGENT_SETTINGS,
-  buildBehaviorInstructions,
+  buildSystemPrompt,
   getAgentSettings,
   type AgentSettingsInput,
 } from "../../lib/agentSettings";
@@ -45,6 +46,8 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
   }
 
   const { message, history, listingIds } = parsedBody.data;
+  const moveInUrgency = parsedBody.data.moveInUrgency ?? "flexible";
+  const responseEmpathy = parsedBody.data.responseEmpathy ?? 6;
   const availableListings = sampleListings.filter((listing) =>
     listingIds.includes(listing.id),
   );
@@ -61,6 +64,11 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
 
   let phase = "openai_completion";
   try {
+    const configurationVersion = createHash("sha256")
+      .update(buildSystemPrompt(behavior))
+      .digest("hex")
+      .slice(0, 16);
+    req.log.info({ conversationId: parsedBody.data.conversationId, configurationVersion }, "Using housing assistant configuration");
     const completion = await openai.chat.completions.create({
       model: "gpt-5-mini",
       max_completion_tokens: 8192,
@@ -86,16 +94,15 @@ router.post("/housing/assistant", assistantLimiter, async (req, res): Promise<vo
       messages: [
         {
           role: "system",
-          content:
-            "You are a housing guide for students; a separate message sets your persona, tone, and style. Help the student compare monthly budget, room privacy, shared living, transit, and amenities. These records are fictional demo examples, not current inventory. Never claim that a listing is real, available, or verified. Use only supplied listing details; do not invent prices, features, campus commute times, deposits, or lease terms. transitMinutes is an illustrative walk to transit, not a campus commute. If the campus or a key preference is unknown, ask one useful follow-up question rather than guessing. Be neutral and inclusive; never ask for or use protected characteristics to steer housing suggestions. Do not request sensitive personal or financial information or give legal or financial advice. Respond with JSON only: {\"reply\":\"short answer written as bullet points\",\"recommendedListingIds\":[\"sample-01\"]}. Format the reply for a busy student who is reading on a small screen: write one short opening line (at most 15 words), then 2 to 5 bullet points. Put each bullet on its own line starting with \"- \", and keep each bullet to one short sentence (about 20 words or fewer) with one idea. Use the line breaks \"\\n\" between lines. Do not write long paragraphs, tables, headings, or numbered essays. If you need to ask a follow-up question, make it the last line, and ask only one. This formatting rule applies whatever the persona, tone, empathy, or initiative settings are. Recommend zero to three IDs only from the supplied listings. If no listing fits or the list is empty, say so and suggest a practical next step.",
-        },
-        {
-          role: "system",
-          content: buildBehaviorInstructions(behavior),
+          content: `${buildSystemPrompt(behavior)}\n\nThe website currently shows illustrative demo records, not verified live inventory. Never claim a listing is real, available, or verified. transitMinutes describes an illustrative walk to transit, not a campus commute.`,
         },
         {
           role: "system",
           content: `Sample listings the website currently shows: ${JSON.stringify(availableListings)}`,
+        },
+        {
+          role: "system",
+          content: `Student-selected controls: move-in urgency is ${moveInUrgency}; response empathy is ${responseEmpathy}/10. Adapt prioritization and tone to these preferences.`,
         },
         ...history.map((entry) => ({
           role: entry.role,

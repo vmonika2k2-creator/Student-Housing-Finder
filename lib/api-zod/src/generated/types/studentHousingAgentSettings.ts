@@ -33,5 +33,12 @@ export interface StudentHousingAgentSettings {
      * @maxLength 500
      */
   goal: string;
+  conversationBehavior: string;
+  guardrails: string;
+  handoverRules: string;
+  knowledgeRules: string;
+  ctaSettings: string;
+  feedbackSettings: string;
+  integrations: Array<{ id: string; type: 'api' | 'mcp'; label: string; url: string }>;
   updatedAt: Date;
 }
