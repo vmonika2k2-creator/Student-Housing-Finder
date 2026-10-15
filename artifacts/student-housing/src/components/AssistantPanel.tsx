@@ -79,21 +79,25 @@ export function AssistantPanel({ listings, onSearch, savedIds, comparisonListing
     setMessages((current) => [...current, { role: 'user', content: message }]);
     try {
       const conversationText = [...messages.filter((item) => item.role === 'user').map((item) => item.content), message].join('\n').replace(/[‐‑‒–—]/g, '-');
-      const rent = conversationText.match(/(?:₹|rs\.?\s*)([\d,]+)\s*(?:\/\s*month|per\s+month|monthly)?/i)?.[1]?.replace(/,/g, '')
+      const rentRange = conversationText.match(/(?:₹|rs\.?\s*)([\d,]+)\s*(?:-|to)\s*(?:₹|rs\.?\s*)?([\d,]+)/i);
+      const rent = rentRange?.[2]?.replace(/,/g, '') ?? conversationText.match(/(?:₹|rs\.?\s*)([\d,]+)\s*(?:\/\s*month|per\s+month|monthly)?/i)?.[1]?.replace(/,/g, '')
         ?? conversationText.match(/\b(?:under|below|max(?:imum)?(?: budget)?(?: of)?|budget(?: of)?)\s*(?:₹|rs\.?\s*)?([\d,]+)/i)?.[1]?.replace(/,/g, '');
       const bhk = conversationText.match(/\b(1\s*RK|studio|[1-4]\s*BHK)\b/i)?.[1]?.replace(/\s+/g, ' ').toUpperCase() ?? '';
       const locality = /loni\s+kalbhor/i.test(conversationText) ? 'Loni Kalbhor' : conversationText.match(/\b(?:in|near|around)\s+(loni\s+kalbhor|[a-z][a-z\s-]{1,40}?)(?=\s+(?:for|under|below|within|with|and|at|near|move|moving)\b|[,\n.]|$)/i)?.[1]?.trim();
+      const requestedAmenities = (['parking', 'lift', 'gym', 'security'] as const).filter((amenity) => new RegExp(`\\b${amenity === 'gym' ? 'gym|gymnasium' : amenity}\\b`, 'i').test(conversationText));
       const isHousingSearch = /\b(find|show|search|looking for|need|want|shortlist|flat|apartment|room|rental|rentals)\b/i.test(message);
-      const shouldSearch = isHousingSearch && (listings.length === 0 || Boolean(rent || bhk || locality));
+      const hasHousingIntent = /\b(find|show|search|looking for|need|want|shortlist|flat|apartment|room|rental|rentals)\b/i.test(conversationText);
+      const hasCurrentSearchDetail = /(?:₹|rs\.?\s*[\d,]+|\bbudget\b.{0,12}\d|\b(?:under|below)\s*\d|\b(?:1\s*RK|studio|[1-4]\s*BHK)\b|loni\s+kalbhor|mit\s*-?\s*adt|university|\b(?:whole\s+)?flat\b|\b(?:furnished|semi[- ]?furnished|unfurnished)\b|\b(?:parking|lift|gym|gymnasium|security)\b)/i.test(message);
+      const shouldSearch = hasHousingIntent && (listings.length === 0 ? isHousingSearch || hasCurrentSearchDetail : hasCurrentSearchDetail);
       const criteria: SearchCriteria = {
         location: locality && !/mit\s*-?\s*adt/i.test(locality) ? locality : 'Pune',
         landmark: /mit\s*-?\s*adt|university/i.test(conversationText) ? 'MIT ADT University' : '',
-        minRent: '',
+        minRent: rentRange?.[1]?.replace(/,/g, '') ?? '',
         maxRent: rent ?? '',
         propertyType: /\b(flat|whole flat|apartment)\b/i.test(conversationText) ? 'Apartment' : '',
         bedrooms: bhk,
         furnishing: /\bsemi[- ]?furnished\b/i.test(conversationText) ? 'Semi-Furnished' : /\bunfurnished\b/i.test(conversationText) ? 'Unfurnished' : /\bfurnished\b/i.test(conversationText) ? 'Furnished' : '',
-        amenities: [],
+        amenities: requestedAmenities,
       };
       setIsSearching(shouldSearch);
       let searchListings: StudentHousingListing[];
@@ -134,6 +138,8 @@ export function AssistantPanel({ listings, onSearch, savedIds, comparisonListing
     if (searchCriteria?.bedrooms && listing.bedrooms?.toLowerCase().replace(/\s+/g, '') === searchCriteria.bedrooms.toLowerCase().replace(/\s+/g, '')) reasons.push(`matches your ${searchCriteria.bedrooms} request`);
     if (searchCriteria?.propertyType && listing.propertyType?.toLowerCase() === searchCriteria.propertyType.toLowerCase()) reasons.push(`matches your ${searchCriteria.propertyType.toLowerCase()} preference`);
     if (searchCriteria?.furnishing && listing.furnishingStatus?.toLowerCase() === searchCriteria.furnishing.toLowerCase()) reasons.push(`matches your ${searchCriteria.furnishing.toLowerCase()} preference`);
+    const matchedAmenities = searchCriteria?.amenities.filter((amenity) => listing.amenities.some((item) => item.toLowerCase().includes(amenity))) ?? [];
+    if (matchedAmenities.length) reasons.push(`includes your requested ${matchedAmenities.join(' and ')}`);
     if (searchCriteria?.location && listing.neighborhood.toLowerCase().includes(searchCriteria.location.toLowerCase())) reasons.push(`listed in ${searchCriteria.location}`);
     if (!reasons.length && listing.monthlyRent !== null) reasons.push(`rent is ₹${new Intl.NumberFormat('en-IN').format(listing.monthlyRent)}/month`);
     if (!reasons.length && listing.amenities.length) reasons.push(`the listing includes ${listing.amenities.slice(0, 2).join(' and ')}`);
