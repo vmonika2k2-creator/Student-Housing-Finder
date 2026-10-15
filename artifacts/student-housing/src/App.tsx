@@ -91,8 +91,17 @@ function Home() {
   ), [listings, propertyType, bedrooms, minRent, maxRent, furnishing]);
   const comparedListings = comparisonIds.flatMap((id) => listings.filter((listing) => listing.id === id));
 
-  async function searchRentals(event?: FormEvent<HTMLFormElement>) {
+  async function searchRentals(event?: FormEvent<HTMLFormElement>, override?: Partial<{ location: string; landmark: string; minRent: string; maxRent: string; propertyType: string; bedrooms: string; furnishing: string; amenities: string[] }>): Promise<StudentHousingListing[]> {
     event?.preventDefault();
+    const criteria = { location, landmark, minRent, maxRent, propertyType, bedrooms, furnishing, amenities, ...override };
+    setLocation(criteria.location);
+    setLandmark(criteria.landmark);
+    setMinRent(criteria.minRent);
+    setMaxRent(criteria.maxRent);
+    setPropertyType(criteria.propertyType);
+    setBedrooms(criteria.bedrooms);
+    setFurnishing(criteria.furnishing);
+    setAmenities(criteria.amenities);
     setIsLoading(true);
     setSearchError('');
     setSearchNote('');
@@ -102,14 +111,14 @@ function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          location,
-          ...(minRent ? { minMonthlyRent: Number(minRent) } : {}),
-          ...(maxRent ? { maxMonthlyRent: Number(maxRent) } : {}),
-          ...(bedrooms ? { bedrooms } : {}),
-          ...(propertyType ? { propertyType } : {}),
-          ...(furnishing ? { furnishing } : {}),
-          ...(amenities.length ? { amenities } : {}),
-          ...(landmark.trim() ? { landmark: landmark.trim() } : {}),
+          location: criteria.location,
+          ...(criteria.minRent ? { minMonthlyRent: Number(criteria.minRent) } : {}),
+          ...(criteria.maxRent ? { maxMonthlyRent: Number(criteria.maxRent) } : {}),
+          ...(criteria.bedrooms ? { bedrooms: criteria.bedrooms } : {}),
+          ...(criteria.propertyType ? { propertyType: criteria.propertyType } : {}),
+          ...(criteria.furnishing ? { furnishing: criteria.furnishing } : {}),
+          ...(criteria.amenities.length ? { amenities: criteria.amenities } : {}),
+          ...(criteria.landmark.trim() ? { landmark: criteria.landmark.trim() } : {}),
         }),
       });
       const payload = await response.json() as RentalSearchResponse | { error?: string };
@@ -123,10 +132,12 @@ function Home() {
       setComparisonIds([]);
       setTotalResults(result.total);
       setSearchNote(result.note ?? '');
+      return result.listings;
     } catch (error) {
       setListings([]);
       setTotalResults(0);
       setSearchError(error instanceof Error ? error.message : 'The live rental search failed. Please try again.');
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -236,7 +247,16 @@ function Home() {
             {savedRecords.length > 0 && <div className="saved-summary" data-testid="text-saved-summary"><Bookmark size={15} fill="currentColor" /> You’ve saved {savedRecords.length} {savedRecords.length === 1 ? 'place' : 'places'}. Open Saved above to see or compare them.</div>}
           </div>
         </section>
-        <AssistantPanel listings={listings} savedIds={savedIds} onToggleSaved={toggleSaved} comparisonIds={comparisonIds} onToggleCompare={toggleCompare} onShowListing={showListing} open={assistantOpen} onOpenChange={setAssistantOpen} />
+        <AssistantPanel listings={listings} comparisonListings={comparedListings} onSearch={(criteria) => searchRentals(undefined, {
+            location: criteria.location,
+            landmark: criteria.landmark,
+            minRent: criteria.minRent,
+            maxRent: criteria.maxRent,
+            propertyType: criteria.propertyType,
+            bedrooms: criteria.bedrooms,
+            furnishing: criteria.furnishing,
+            amenities: criteria.amenities,
+          })} savedIds={savedIds} onToggleSaved={toggleSaved} comparisonIds={comparisonIds} onToggleCompare={toggleCompare} onShowListing={showListing} open={assistantOpen} onOpenChange={setAssistantOpen} />
 
         <section className="closing-note" data-testid="panel-next-steps">
           <div className="closing-mark"><Sparkles size={19} /></div>
