@@ -8,6 +8,7 @@ import {
   SendStudentHousingChatResponse,
 } from "@workspace/api-zod";
 import { sampleListings } from "./listings";
+import { ApifyRealEstateError, searchApifyIndiaRentals } from "../../lib/apifyRealEstate";
 import adminRouter from "./admin";
 import { getCachedRentalListings, searchSquareYardsRentals, SquareYardsError } from "../../lib/squareyards";
 import {
@@ -44,18 +45,24 @@ const rentalSearchLimiter = rateLimit({
   message: { error: "Please wait a moment before searching again." },
 });
 
+router.get("/housing/search/provider", (_req, res): void => {
+  res.json({ provider: process.env.HOUSING_SEARCH_PROVIDER === "apify" ? "apify" : "squareyards" });
+});
+
 router.get("/housing/listings", (_req, res): void => {
   res.json(ListStudentHousingListingsResponse.parse(sampleListings));
 });
 
 router.post("/housing/search", rentalSearchLimiter, async (req, res): Promise<void> => {
   try {
-    const result = await searchSquareYardsRentals(req.body);
+    const result = process.env.HOUSING_SEARCH_PROVIDER === "apify"
+      ? await searchApifyIndiaRentals(req.body)
+      : await searchSquareYardsRentals(req.body);
     res.json(result);
   } catch (error) {
-    const statusCode = error instanceof SquareYardsError ? error.statusCode : 502;
-    const message = error instanceof Error ? error.message : "Unknown Square Yards MCP error";
-    req.log.warn({ err: error, statusCode }, "Square Yards rental search failed");
+    const statusCode = error instanceof ApifyRealEstateError || error instanceof SquareYardsError ? error.statusCode : 502;
+    const message = error instanceof Error ? error.message : "Unknown property search MCP error";
+    req.log.warn({ err: error, statusCode }, "Rental search failed");
     res.status(statusCode).json({ error: message });
   }
 });

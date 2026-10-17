@@ -282,6 +282,8 @@ function SettingsEditor({
   const [integrationLabel, setIntegrationLabel] = useState('');
   const [integrationUrl, setIntegrationUrl] = useState('');
   const [editingIntegrationId, setEditingIntegrationId] = useState('');
+  const [apifyStatus, setApifyStatus] = useState('Not checked');
+  const [apifyChecking, setApifyChecking] = useState(false);
 
   useEffect(() => {
     if (settings.data) {
@@ -342,6 +344,19 @@ function SettingsEditor({
   const goalText = watch('goal') ?? '';
   const integrations = watch('integrations') ?? [];
   const [resetNote, setResetNote] = useState(false);
+
+  async function checkApifyStatus() {
+    setApifyChecking(true);
+    try {
+      const response = await fetch('/api/housing/admin/integrations/apify/status', { credentials: 'same-origin' });
+      const result = await response.json() as { connected?: boolean; tools?: string[]; error?: string };
+      setApifyStatus(response.ok && result.connected ? 'Connected · ' + (result.tools?.length ?? 0) + ' tools discovered' : result.error ?? 'Connection check failed.');
+    } catch {
+      setApifyStatus('Connection check failed.');
+    } finally {
+      setApifyChecking(false);
+    }
+  }
 
   function saveIntegration() {
     const label = integrationLabel.trim();
@@ -518,6 +533,7 @@ function SettingsEditor({
                 <div className="section-number">10</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">CONNECTED RESOURCES</p><h2 id="integrations-title">API and MCP links</h2></div></div>
+                  <div className="integration-form"><p>Saved links are references only. The Apify connection uses the server-side APIFY_API_TOKEN Replit Secret. Property searches can incur charges.</p><button type="button" className="admin-secondary-button" onClick={() => void checkApifyStatus()} disabled={apifyChecking}>{apifyChecking ? 'Checking…' : 'Check Apify connection'}</button><span role="status">{apifyStatus}</span></div>
                   <p className="editor-intro">Save reference links for your team. These links are managed here; adding a link does not authorize API calls or connect an MCP server.</p>
                   <div className="integration-form">
                     <label className="admin-label" htmlFor="integration-type">Type</label>
