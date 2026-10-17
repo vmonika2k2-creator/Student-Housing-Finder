@@ -27,7 +27,7 @@ function numberValue(...values: unknown[]): number | null {
   for (const value of values) {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string" && value.trim()) {
-      const parsed = Number(value.replace(/[₹,\\s]/g, ""));
+      const parsed = Number(value.replace(/[₹,\s]/g, ""));
       if (Number.isFinite(parsed)) return parsed;
     }
   }
