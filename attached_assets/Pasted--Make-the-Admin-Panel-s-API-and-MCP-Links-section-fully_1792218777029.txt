@@ -1,0 +1,35 @@
+**Make the Admin Panel's API and MCP Links section fully functional and connected to the Homigo user-facing application.**
+
+### 1. Dynamic integration management
+- Allow admins to add, edit, enable, disable, test and remove API and MCP integrations.
+- Store integration configurations persistently in the database.
+- Each integration should have a unique ID, name, type (API or MCP), endpoint, connection status, enabled/disabled state, and any required configuration.
+- Changes made by the admin must persist after refreshing the page.
+
+### 2. Actual integration, not just saved links
+- For MCP integrations, use a compatible MCP client and transport, discover the available tools, and call the appropriate tools.
+- For API integrations, support the documented endpoint, HTTP method, authentication, request parameters and response mapping.
+- A plain website URL must not be treated as a working API or MCP server.
+- Add a Test Connection action that verifies actual connectivity and, where possible, confirms that the source can return usable data.
+- Display meaningful connection and error statuses.
+
+### 3. Connect integrations to the user-facing app
+- The Homigo search backend must dynamically use enabled and successfully configured property sources.
+- When an admin enables a source, make it available for subsequent relevant searches.
+- When an admin disables or removes a source, stop making calls to it.
+- When an admin edits a source, apply the updated configuration to subsequent requests.
+- Merge and normalise results from multiple sources into a consistent property-card format.
+- Preserve source attribution and the original listing URL whenever provided.
+- Handle duplicates, missing fields, timeouts, failures and empty results gracefully.
+- Do not show fake listings or claim that a source is working without testing it.
+
+### 4. Security
+- Store API keys and tokens securely on the backend, never in frontend code or browser-visible responses.
+- Never expose credentials when displaying or editing an integration.
+- Validate endpoints and prevent requests to internal/private network addresses to protect against SSRF.
+- Restrict integration management to authorised administrators.
+
+### 5. Preserve the existing application
+Inspect the current project structure, database, admin panel, backend and user-facing search flow before making changes. Reuse the existing architecture and UI. Do not rebuild the application unnecessarily.
+
+Implement the full end-to-end flow and test it: add a source → test it → enable it → search from the user page → disable it → verify it is no longer queried. Report which integrations were genuinely tested and which still need credentials or configuration.
