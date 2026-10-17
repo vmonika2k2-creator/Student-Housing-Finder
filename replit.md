@@ -13,6 +13,9 @@ A student-first rental finder with sample listings and a conversational assistan
 - If `/admin` reports that the settings schema is out of date: in the Replit **Development Shell**, run `pnpm --filter @workspace/db run push` and approve the pending schema changes. When it finishes, click **Publish** to sync the production app's database schema, then reload `/admin`. Keep Replit's managed `DATABASE_URL` and database name unchanged; do not run schema pushes from a published/production shell.
 - Required secret: `OPENAI_API_KEY` — server-side key for the housing assistant; configure it with Replit Secrets
 - Required secret: `ADMIN_PASSWORD` — password for the admin panel at `/admin` (optional `ADMIN_SESSION_SECRET` overrides the cookie signing key)
+- Optional secret: `APIFY_API_TOKEN` — server-side bearer token for The Mine Works India Real Estate MCP. Add it in Replit Secrets; never put it in frontend code or saved integration URLs.
+- Optional variable: `HOUSING_SEARCH_PROVIDER=apify` switches rental search to Apify. Unset or any other value keeps Square Yards. Optional `APIFY_MCP_URL` overrides the default endpoint only when using the official Apify actor host.
+- Apify searches can cost up to $0.15 for a complete aggregator result, $0.07 for partial results, or $0.02 per source, plus Apify platform usage. The app asks for confirmation before each Apify search. The admin connection check only lists MCP tools; it does not search properties.
 
 ## Stack
 

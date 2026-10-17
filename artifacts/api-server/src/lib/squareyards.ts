@@ -214,7 +214,7 @@ function parseListing(raw: unknown, detailValue?: unknown): StudentHousingListin
   };
 }
 
-function rememberListings(listings: StudentHousingListing[]) {
+export function cacheRentalListings(listings: StudentHousingListing[]) {
   const now = Date.now();
   for (const listing of listings) listingCache.set(listing.id, { listing, expiresAt: now + LISTING_CACHE_TTL_MS });
   for (const [id, cached] of listingCache) if (cached.expiresAt <= now) listingCache.delete(id);
@@ -329,7 +329,7 @@ export async function searchSquareYardsRentals(input: RentalSearchInput): Promis
       }));
 
       const listings = enriched.filter((item): item is StudentHousingListing => item !== null);
-      rememberListings(listings);
+      cacheRentalListings(listings);
       return {
         listings,
         total: readNumber(searchResponse.total) ?? listings.length,

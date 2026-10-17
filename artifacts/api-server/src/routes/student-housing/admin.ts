@@ -20,6 +20,7 @@ import {
   requireAdmin,
 } from "../../lib/adminAuth";
 import { buildSystemPrompt, getAgentSettings, saveAgentSettings } from "../../lib/agentSettings";
+import { checkApifyConnection } from "../../lib/apifyRealEstate";
 import { getHousingConversation, getStudentName, isConversationFarewell, listHousingConversations, saveConversationFeedback } from "../../lib/conversations";
 
 const router: IRouter = Router();
@@ -78,6 +79,15 @@ router.post("/housing/admin/session", loginLimiter, (req, res): void => {
 router.post("/housing/admin/logout", (_req, res): void => {
   res.clearCookie(ADMIN_COOKIE_NAME, cookieOptions);
   res.json(LogoutHousingAdminResponse.parse({ authenticated: false }));
+});
+
+router.get("/housing/admin/integrations/apify/status", requireAdmin, async (_req, res): Promise<void> => {
+  try {
+    res.json({ configured: true, ...(await checkApifyConnection()) });
+  } catch (error) {
+    const statusCode = typeof (error as { statusCode?: unknown })?.statusCode === "number" ? (error as { statusCode: number }).statusCode : 502;
+    res.status(statusCode).json({ configured: Boolean(process.env.APIFY_API_TOKEN), connected: false, error: error instanceof Error ? error.message : "Could not connect to Apify." });
+  }
 });
 
 router.get("/housing/admin/conversations", requireAdmin, async (req, res): Promise<void> => {
