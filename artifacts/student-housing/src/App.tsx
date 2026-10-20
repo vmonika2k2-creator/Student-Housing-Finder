@@ -69,7 +69,7 @@ function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [searchNote, setSearchNote] = useState('');
-  const [searchProvider, setSearchProvider] = useState<'squareyards' | 'apify'>('squareyards');
+  const [searchProvider, setSearchProvider] = useState<'squareyards' | 'apify' | 'magicbricks'>('squareyards');
   const [location, setLocation] = useState('Pune');
   const [landmark, setLandmark] = useState('');
   const [minRent, setMinRent] = useState('');
@@ -86,7 +86,7 @@ function Home() {
   useEffect(() => {
     fetch('/api/housing/search/provider')
       .then((response) => response.ok ? response.json() as Promise<{ provider?: string }> : null)
-      .then((value) => { if (value?.provider === 'apify') setSearchProvider('apify'); })
+      .then((value) => { if (value?.provider === 'apify' || value?.provider === 'magicbricks') setSearchProvider(value.provider); })
       .catch(() => undefined);
   }, []);
 
@@ -102,6 +102,7 @@ function Home() {
   async function searchRentals(event?: FormEvent<HTMLFormElement>, override?: Partial<{ location: string; landmark: string; minRent: string; maxRent: string; propertyType: string; bedrooms: string; furnishing: string; amenities: string[] }>): Promise<StudentHousingListing[]> {
     event?.preventDefault();
     if (searchProvider === 'apify' && !window.confirm('This search checks up to four property portals. The aggregator costs up to $0.15 for a complete result, plus Apify platform usage; partial results may cost $0.07 or $0.02 per source. Run this live search?')) return [];
+    if (searchProvider === 'magicbricks' && !window.confirm('This runs the MagicBricks scraper for up to 20 rentals in the selected Pune locality. Apify actor and platform charges may apply. Run this live search?')) return [];
     const criteria = { location, landmark, minRent, maxRent, propertyType, bedrooms, furnishing, amenities, ...override };
     setLocation(criteria.location);
     setLandmark(criteria.landmark);
@@ -211,7 +212,7 @@ function Home() {
 
         <div className="demo-banner live-banner" role="note" data-testid="status-rental-source-disclaimer">
           <span className="demo-icon"><CircleHelp size={16} /></span>
-          <p><strong>{searchProvider === 'apify' ? '99acres, MagicBricks, NoBroker, and Housing.com rental listings for Pune.' : 'Square Yards rental listings for Pune.'}</strong> Listing details come from the source; this app does not verify current availability. Confirm rent, deposit, and terms with the listing contact.{searchProvider === 'apify' ? ' Apify search fees and platform usage may apply.' : ''}</p>
+          <p><strong>{searchProvider === 'apify' ? '99acres, MagicBricks, NoBroker, and Housing.com rental listings for Pune.' : searchProvider === 'magicbricks' ? 'Live MagicBricks rental listings for Pune.' : 'Square Yards rental listings for Pune.'}</strong> Listing details come from the source; this app does not verify current availability. Confirm rent, deposit, and terms with the listing contact.{searchProvider !== 'squareyards' ? ' Apify search fees and platform usage may apply.' : ''}</p>
           <span className="demo-stamp">LIVE SEARCH</span>
         </div>
 
@@ -247,7 +248,7 @@ function Home() {
             {isLoading && <div className="listing-grid" aria-label="Loading homes" data-testid="status-listings-loading">{[0, 1, 2, 3].map((item) => <div className="skeleton-card" key={item}><div className="skeleton skeleton-image" /><div className="skeleton-copy"><div className="skeleton skeleton-line wide" /><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /></div></div>)}</div>}
             {searchError && <div className="state-card error-state" role="alert" data-testid="status-listings-error"><div className="state-icon"><CircleHelp size={22} /></div><h3>Live listings couldn’t be loaded.</h3><p>{searchError}</p><button type="button" className="button-primary" onClick={() => void searchRentals()} data-testid="button-retry-listings">Try again <ArrowRight size={15} /></button></div>}
             {!isLoading && !searchError && hasSearched && filtered.length === 0 && <div className="state-card empty-state" data-testid="status-listings-empty"><div className="state-icon"><Sparkles size={22} /></div><h3>We couldn’t find matching rentals.</h3><p>Try widening the rent range, removing an amenity, or searching another Pune locality. Square Yards’ amenity data can be sparse.</p><button type="button" className="button-primary" onClick={resetFilters} data-testid="button-empty-reset">Reset search <ArrowRight size={15} /></button></div>}
-            {!isLoading && !searchError && !hasSearched && <div className="state-card empty-state" data-testid="status-listings-ready"><div className="state-icon"><Sparkles size={22} /></div><h3>Search current Pune rental listings.</h3><p>{searchProvider === 'apify' ? 'Choose a locality and budget, then search the connected portals.' : 'Choose a locality, budget, and any must-haves above, then search Square Yards.'}</p></div>}
+            {!isLoading && !searchError && !hasSearched && <div className="state-card empty-state" data-testid="status-listings-ready"><div className="state-icon"><Sparkles size={22} /></div><h3>Search current Pune rental listings.</h3><p>{searchProvider === 'apify' ? 'Choose a locality and budget, then search the connected portals.' : searchProvider === 'magicbricks' ? 'Choose a locality and budget, then search MagicBricks.' : 'Choose a locality, budget, and any must-haves above, then search Square Yards.'}</p></div>}
             {!isLoading && !searchError && filtered.length > 0 && <div className="listing-grid" data-testid="grid-listings">{filtered.map((listing) => <ListingCard key={listing.id} listing={listing} saved={savedIds.includes(listing.id)} onToggleSaved={toggleSaved} isCompared={comparisonIds.includes(listing.id)} onToggleCompare={toggleCompare} compareDisabled={comparisonIds.length >= 3} />)}</div>}
 
             {searchNote && <p className="search-source-note" data-testid="text-search-source-note">{searchNote}</p>}

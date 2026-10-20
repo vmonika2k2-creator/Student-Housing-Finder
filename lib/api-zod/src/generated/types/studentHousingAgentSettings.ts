@@ -12,7 +12,7 @@ export interface StudentHousingAgentSettings {
   /** Atmosphere, warmth, pacing, and interaction style for the conversation. @maxLength 1000 */
   environment: string;
   /** Listing source used for new rental searches. */
-  rentalSearchProvider: 'squareyards' | 'apify';
+  rentalSearchProvider: 'squareyards' | 'apify' | 'magicbricks';
   /** @maxLength 300 */
   tone: string;
   /**

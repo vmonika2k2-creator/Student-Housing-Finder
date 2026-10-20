@@ -8,7 +8,7 @@ export const EMPATHY_STAGE_COUNT = 5;
 export type AgentSettings = {
   persona: string;
   environment: string;
-  rentalSearchProvider: "squareyards" | "apify";
+  rentalSearchProvider: "squareyards" | "apify" | "magicbricks";
   tone: string;
   empathyScale: number;
   goalOrientationScale: number;
@@ -91,7 +91,7 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
   return {
     persona: row.persona,
     environment: row.environment ?? DEFAULT_ENVIRONMENT,
-    rentalSearchProvider: row.rentalSearchProvider === "apify" ? "apify" : row.rentalSearchProvider === "squareyards" ? "squareyards" : DEFAULT_RENTAL_SEARCH_PROVIDER,
+    rentalSearchProvider: row.rentalSearchProvider === "apify" ? "apify" : row.rentalSearchProvider === "magicbricks" ? "magicbricks" : row.rentalSearchProvider === "squareyards" ? "squareyards" : DEFAULT_RENTAL_SEARCH_PROVIDER,
     tone: row.tone,
     empathyScale: row.empathyScale,
     goalOrientationScale: row.goalOrientationScale,

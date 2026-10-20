@@ -562,11 +562,12 @@ function SettingsEditor({
                     <a href="https://apify.com/themineworks/india-real-estate-mcp" target="_blank" rel="noreferrer">View actor details</a>
                     <div className="live-mcp-controls"><button type="button" className="admin-secondary-button" onClick={() => void checkApifyStatus()} disabled={apifyChecking}>{apifyChecking ? 'Checking connection…' : 'Check live connection'}</button><span role="status" aria-live="polite">{apifyStatus}</span></div>
                     <label className="admin-label" htmlFor="rental-search-provider">Source for new rental searches</label>
-                    <select id="rental-search-provider" value={rentalSearchProvider} onChange={(event) => setValue('rentalSearchProvider', event.target.value as 'squareyards' | 'apify', { shouldDirty: true, shouldValidate: true })} data-testid="select-rental-search-provider">
+                    <select id="rental-search-provider" value={rentalSearchProvider} onChange={(event) => setValue('rentalSearchProvider', event.target.value as 'squareyards' | 'apify' | 'magicbricks', { shouldDirty: true, shouldValidate: true })} data-testid="select-rental-search-provider">
                       <option value="squareyards">Square Yards</option>
                       <option value="apify">India Real Estate MCP · four portals</option>
+                      <option value="magicbricks">MagicBricks scraper · Pune, 20 results</option>
                     </select>
-                    <p className="live-mcp-note">Save settings to apply the selected source. To use this MCP, add <code>APIFY_API_TOKEN</code> in Replit Secrets, then check the connection. Live searches may incur Apify charges.</p>
+                    <p className="live-mcp-note">Save settings to apply the selected source. The MagicBricks scraper uses the same <code>APIFY_API_TOKEN</code> in Replit Secrets and searches the requested Pune locality. Live searches may incur Apify charges.</p>
                   </div>
                   <p className="editor-intro">Other API/MCP links below are saved as team references; adding one does not connect a new service.</p>
                   <div className="integration-form">

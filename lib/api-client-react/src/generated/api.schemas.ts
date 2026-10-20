@@ -101,7 +101,7 @@ export interface StudentHousingAgentSettings {
   /** Atmosphere, warmth, pacing, and interaction style for the conversation. @maxLength 1000 */
   environment: string;
   /** Listing source used for new rental searches. */
-  rentalSearchProvider: 'squareyards' | 'apify';
+  rentalSearchProvider: 'squareyards' | 'apify' | 'magicbricks';
   /** @maxLength 300 */
   tone: string;
   /**
@@ -145,7 +145,7 @@ export interface StudentHousingAgentSettingsInput {
   /** Atmosphere, warmth, pacing, and interaction style for the conversation. @minLength 1 @maxLength 1000 */
   environment: string;
   /** Listing source used for new rental searches. */
-  rentalSearchProvider: 'squareyards' | 'apify';
+  rentalSearchProvider: 'squareyards' | 'apify' | 'magicbricks';
   /**
      * @minLength 1
      * @maxLength 300

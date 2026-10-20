@@ -371,7 +371,7 @@ components:
           maxLength: 1000
         rentalSearchProvider:
           type: string
-          enum: [squareyards, apify]
+          enum: [squareyards, apify, magicbricks]
           description: Listing source used for new rental searches.
         tone:
           type: string
@@ -434,7 +434,7 @@ components:
           maxLength: 1000
         rentalSearchProvider:
           type: string
-          enum: [squareyards, apify]
+          enum: [squareyards, apify, magicbricks]
           description: Listing source used for new rental searches.
         tone:
           type: string

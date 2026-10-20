@@ -81,7 +81,7 @@ function safeSourceUrl(value: unknown): string | null {
 }
 function listing(raw: unknown, source: string): StudentHousingListing | null {
   if (!isRecord(raw)) return null;
-  const rawId = stringValue(raw.id, raw.listing_id, raw.property_id, raw.url, raw.listing_url);
+  const rawId = stringValue(raw.id, raw.listing_id, raw.property_id, raw.url, raw.listing_url, raw.property_url, raw.propertyUrl, raw.listingUrl);
   if (!rawId) return null;
   const title = stringValue(raw.title, raw.property_title, raw.name) ?? "Rental listing";
   const bhk = stringValue(raw.bhk, raw.bedrooms, raw.configuration, raw.unit_type);
@@ -108,7 +108,7 @@ function listing(raw: unknown, source: string): StudentHousingListing | null {
     deposit: stringValue(raw.deposit, raw.security_deposit),
     area: stringValue(raw.area_text, raw.area, raw.area_sqft),
     distanceKm: numberValue(raw.distance_km),
-    listingUrl: safeSourceUrl(raw.url ?? raw.listing_url),
+    listingUrl: safeSourceUrl(raw.url ?? raw.listing_url ?? raw.property_url ?? raw.propertyUrl ?? raw.listingUrl),
     isVerified: null,
   };
 }
@@ -149,6 +149,7 @@ export async function searchApifyIndiaRentals(input: unknown): Promise<{ listing
   if (!isRecord(input) || typeof input.location !== "string" || !input.location.trim() || input.location.trim().length > 120) {
     throw new ApifyRealEstateError("Enter a city or locality (up to 120 characters).", 400);
   }
+  const locality = input.location.trim();
   const optionalPrice = (key: string): number | undefined => {
     const value = input[key];
     if (value === undefined || value === null || value === "") return undefined;
@@ -163,7 +164,7 @@ export async function searchApifyIndiaRentals(input: unknown): Promise<{ listing
     const tool = findTool(discovered.tools as Tool[], "search_all_india_properties");
     const args = toolArguments(tool, {
       city: "Pune", listing_type: "rent", max_per_source: 5,
-      locality: input.location.trim(), min_price: min, max_price: max,
+      locality, min_price: min, max_price: max,
       bedrooms: typeof input.bedrooms === "string" ? input.bedrooms : undefined,
       property_type: typeof input.propertyType === "string" ? input.propertyType : undefined,
     });
@@ -184,4 +185,46 @@ export async function searchApifyIndiaRentals(input: unknown): Promise<{ listing
       ...(typeof response.sources_tier === "string" ? { note: "Apify source coverage: " + response.sources_tier + ". Confirm availability and terms with the listing contact." } : {}),
     };
   });
+}
+
+export async function searchMagicBricksRentals(input: unknown): Promise<{ listings: StudentHousingListing[]; total: number; page: number; totalPages: number; note: string }> {
+  if (!isRecord(input) || typeof input.location !== "string" || !input.location.trim() || input.location.trim().length > 120) {
+    throw new ApifyRealEstateError("Enter a Pune locality or area (up to 120 characters).", 400);
+  }
+  const locality = input.location.trim();
+  const token = process.env.APIFY_API_TOKEN;
+  if (!token) throw new ApifyRealEstateError("Add APIFY_API_TOKEN to Replit Secrets before connecting Apify.", 503);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  try {
+    const response = await fetch("https://api.apify.com/v2/acts/thirdwatch~magicbricks-scraper/run-sync-get-dataset-items?clean=true&format=json&limit=20", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ city: "Pune", locality, listingType: "rent", maxResults: 20 }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const statusCode = response.status === 401 || response.status === 403 ? 503 : 502;
+      throw new ApifyRealEstateError(`MagicBricks search failed (HTTP ${response.status}). Check the Apify token and actor access.`, statusCode);
+    }
+    const payload: unknown = await response.json();
+    const rawListings = Array.isArray(payload) ? payload : isRecord(payload) && Array.isArray(payload.items) ? payload.items : null;
+    if (!rawListings) throw new ApifyRealEstateError("MagicBricks returned an unexpected response.");
+    const listings = rawListings.map((item) => listing(item, "magicbricks")).filter((item): item is StudentHousingListing => item !== null);
+    cacheRentalListings(listings);
+    return {
+      listings,
+      total: listings.length,
+      page: 1,
+      totalPages: 1,
+      note: "Live MagicBricks rental results for Pune. Apify actor usage charges may apply; confirm availability and terms with the listing contact.",
+    };
+  } catch (error) {
+    if (error instanceof ApifyRealEstateError) throw error;
+    if (controller.signal.aborted) throw new ApifyRealEstateError("MagicBricks took too long to respond. Please try again.", 504);
+    throw new ApifyRealEstateError("MagicBricks search failed: " + (error instanceof Error ? error.message : "Unknown connection error"));
+  } finally {
+    clearTimeout(timer);
+  }
 }

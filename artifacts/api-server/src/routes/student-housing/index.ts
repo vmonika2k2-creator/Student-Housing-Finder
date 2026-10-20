@@ -8,7 +8,7 @@ import {
   SendStudentHousingChatResponse,
 } from "@workspace/api-zod";
 import { sampleListings } from "./listings";
-import { ApifyRealEstateError, searchApifyIndiaRentals } from "../../lib/apifyRealEstate";
+import { ApifyRealEstateError, searchApifyIndiaRentals, searchMagicBricksRentals } from "../../lib/apifyRealEstate";
 import adminRouter from "./admin";
 import { getCachedRentalListings, searchSquareYardsRentals, SquareYardsError } from "../../lib/squareyards";
 import {
@@ -64,7 +64,9 @@ router.post("/housing/search", rentalSearchLimiter, async (req, res): Promise<vo
     const settings = await getAgentSettings();
     const result = settings.rentalSearchProvider === "apify"
       ? await searchApifyIndiaRentals(req.body)
-      : await searchSquareYardsRentals(req.body);
+      : settings.rentalSearchProvider === "magicbricks"
+        ? await searchMagicBricksRentals(req.body)
+        : await searchSquareYardsRentals(req.body);
     res.json(result);
   } catch (error) {
     const statusCode = error instanceof ApifyRealEstateError || error instanceof SquareYardsError ? error.statusCode : 502;
