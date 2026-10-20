@@ -365,6 +365,10 @@ components:
         persona:
           type: string
           maxLength: 1000
+        environment:
+          type: string
+          description: Atmosphere, warmth, pacing, and interaction style for the conversation.
+          maxLength: 1000
         tone:
           type: string
           maxLength: 300
@@ -411,13 +415,18 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, integrations, updatedAt]
+      required: [persona, environment, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, integrations, updatedAt]
     StudentHousingAgentSettingsInput:
       type: object
       properties:
         persona:
           type: string
           minLength: 1
+          maxLength: 1000
+        environment:
+          type: string
+          minLength: 1
+          description: Atmosphere, warmth, pacing, and interaction style for the conversation.
           maxLength: 1000
         tone:
           type: string
@@ -463,5 +472,5 @@ components:
               label: { type: string, minLength: 1, maxLength: 100 }
               url: { type: string, format: uri, maxLength: 1000 }
             required: [id, type, label, url]
-      required: [persona, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
+      required: [persona, environment, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
 

@@ -87,6 +87,7 @@ const EMPATHY_EXAMPLE_PLACEHOLDERS = [
 
 const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
   persona: 'You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.',
+  environment: 'Create a calm, welcoming, home-like conversation. Be warm and reassuring without being overly familiar. Keep a steady, unhurried pace, use plain language, and make each exchange feel like a helpful conversation rather than a form. Give the student room to think and choose.',
   tone: 'Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.',
   empathyScale: 5,
   goalOrientationScale: 5,
@@ -115,6 +116,7 @@ function empathyStageFor(value: number) {
 function toFormValues(settings: StudentHousingAgentSettingsInput): StudentHousingAgentSettingsInput {
   return {
     persona: settings.persona,
+    environment: settings.environment ?? DEFAULT_SETTINGS.environment,
     tone: settings.tone,
     empathyScale: settings.empathyScale,
     goalOrientationScale: settings.goalOrientationScale,
@@ -373,6 +375,7 @@ function SettingsEditor({
   function resetToDefaults() {
     const options = { shouldDirty: true, shouldValidate: true } as const;
     setValue('persona', DEFAULT_SETTINGS.persona, options);
+    setValue('environment', DEFAULT_SETTINGS.environment, options);
     setValue('tone', DEFAULT_SETTINGS.tone, options);
     setValue('empathyScale', DEFAULT_SETTINGS.empathyScale, options);
     setValue('goalOrientationScale', DEFAULT_SETTINGS.goalOrientationScale, options);
@@ -441,8 +444,20 @@ function SettingsEditor({
                 </div>
               </section>
 
-              <section className="editor-section" aria-labelledby="tone-title">
+              <section className="editor-section" aria-labelledby="environment-title">
                 <div className="section-number">02</div>
+                <div className="section-body">
+                  <div className="editor-section-heading"><div><p className="admin-eyebrow">THE STUDENT’S EXPERIENCE</p><h2 id="environment-title">Environment</h2></div><span className="section-note">How should it feel?</span></div>
+                  <p className="editor-intro">Set the atmosphere, warmth, pacing, and interaction style students experience. This guidance is saved and used in every conversation.</p>
+                  <label className="admin-label" htmlFor="environment">Conversation environment</label>
+                  <textarea id="environment" rows={4} maxLength={1000} placeholder="For example: Calm, welcoming, unhurried, and supportive. Let the student set the pace." {...register('environment', { required: 'Describe the conversation environment.', maxLength: { value: 1000, message: 'Keep environment guidance under 1,000 characters.' } })} aria-invalid={!!errors.environment} aria-describedby="environment-help environment-count" data-testid="textarea-admin-environment" />
+                  <div className="field-meta"><span id="environment-help">Describe the feeling and pace, beyond the exact words the guide uses.</span><span id="environment-count" data-testid="text-environment-character-count">{watch('environment').length}/1,000</span></div>
+                  {errors.environment && <p className="admin-form-error" role="alert">{errors.environment.message}</p>}
+                </div>
+              </section>
+
+              <section className="editor-section" aria-labelledby="tone-title">
+                <div className="section-number">03</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">HOW IT SOUNDS</p><h2 id="tone-title">Tone</h2></div><span className="section-note">What does it feel like?</span></div>
                   <p className="editor-intro">Set the language style students should hear: clear, warm, and never pushy.</p>
@@ -463,10 +478,10 @@ function SettingsEditor({
               </section>
 
               <section className="editor-section scales-section" aria-labelledby="scales-title">
-                <div className="section-number">03</div>
+                <div className="section-number">04</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">CONVERSATION BALANCE</p><h2 id="scales-title">Response style</h2></div><span className="section-note">Fine-tune the guide</span></div>
-                  <p className="editor-intro">Choose how empathetic the guide is, and how actively it works toward your goal.</p>
+                  <p className="editor-intro">Tune warmth and empathy, then choose how actively the guide works toward its goal.</p>
                   <ScaleField id="empathy-scale" label="Empathy" description="How much should it acknowledge feelings and uncertainty?" value={empathy} onChange={(value) => setValue('empathyScale', value, { shouldDirty: true, shouldValidate: true })} low="Direct & factual" high="Highly empathetic" testId="range-admin-empathy">
                     <div className="stage-list" data-testid="panel-empathy-stages">
                       <p className="stage-intro">Write an example reply for each of the five stages. The guide uses them to understand what each level of empathy sounds like, then responds at the stage your slider points to.</p>
@@ -495,7 +510,7 @@ function SettingsEditor({
                   </ScaleField>
                   <ScaleField id="goal-orientation-scale" label="Initiative" description="How much should the guide take the lead toward the goal below?" value={goalOrientation} onChange={(value) => setValue('goalOrientationScale', value, { shouldDirty: true, shouldValidate: true })} low="Passive & exploratory" high="Goal-oriented" testId="range-admin-goal-orientation">
                     <div className="goal-box">
-                      <label className="admin-label" htmlFor="goal">Goal for the conversation</label>
+                      <label className="admin-label" htmlFor="goal">Goal and desired outcome</label>
                       <textarea
                         id="goal"
                         rows={3}
@@ -505,7 +520,7 @@ function SettingsEditor({
                         aria-describedby="goal-help goal-count"
                         data-testid="textarea-admin-goal"
                       />
-                      <div className="field-meta"><span id="goal-help">The higher the initiative, the more actively the guide steers toward this goal. Leave blank for no specific goal.</span><span id="goal-count" data-testid="text-goal-character-count">{goalText.length}/500</span></div>
+                      <div className="field-meta"><span id="goal-help">Describe the purpose and useful outcome. Conversation behaviour below controls question flow and decision-making. The initiative slider sets how actively the guide works toward this goal.</span><span id="goal-count" data-testid="text-goal-character-count">{goalText.length}/500</span></div>
                     </div>
                   </ScaleField>
                 </div>
@@ -513,7 +528,7 @@ function SettingsEditor({
             </div>
 
               {([
-                ['conversationBehavior', 'Agent behaviour', 'Opening questions, clarifications, repairs and conversation sequence.'],
+                ['conversationBehavior', 'Conversation flow and question structure', 'Opening questions, form or intake structure, clarifications, decision behavior, and conversation sequence.'],
                 ['guardrails', 'Guardrails', 'Safety, fairness, accuracy and privacy rules.'],
                 ['handoverRules', 'Handover rules', 'When and how to offer owner or human support.'],
                 ['knowledgeRules', 'Knowledge/data rules', 'How the guide uses listing and local information.'],
@@ -521,16 +536,16 @@ function SettingsEditor({
                 ['feedbackSettings', 'Feedback settings', 'How the guide asks for feedback after helping.'],
               ] as const).map(([field, title, description], index) => (
                 <section className="editor-section" aria-labelledby={`${field}-title`} key={field}>
-                  <div className="section-number">{String(index + 3).padStart(2, '0')}</div>
+                  <div className="section-number">{String(index + 5).padStart(2, '0')}</div>
                   <div className="section-body">
                     <div className="editor-section-heading"><div><p className="admin-eyebrow">AGENT CONFIGURATION</p><h2 id={`${field}-title`}>{title}</h2></div></div>
                     <p className="editor-intro">{description}</p>
-                    <textarea id={field} rows={4} maxLength={field === 'goal' ? 500 : 5000} {...register(field)} aria-label={title} data-testid={`textarea-admin-${field}`} />
+                    <textarea id={field} rows={4} maxLength={5000} {...register(field)} aria-label={title} data-testid={`textarea-admin-${field}`} />
                   </div>
                 </section>
               ))}
               <section className="editor-section" aria-labelledby="integrations-title">
-                <div className="section-number">10</div>
+                <div className="section-number">11</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">CONNECTED RESOURCES</p><h2 id="integrations-title">API and MCP links</h2></div></div>
                   <div className="integration-form"><p>Saved links are references only. The Apify connection uses the server-side APIFY_API_TOKEN Replit Secret. Property searches can incur charges.</p><button type="button" className="admin-secondary-button" onClick={() => void checkApifyStatus()} disabled={apifyChecking}>{apifyChecking ? 'Checking…' : 'Check Apify connection'}</button><span role="status">{apifyStatus}</span></div>

@@ -98,6 +98,8 @@ export interface HousingAdminLogin {
 export interface StudentHousingAgentSettings {
   /** @maxLength 1000 */
   persona: string;
+  /** Atmosphere, warmth, pacing, and interaction style for the conversation. @maxLength 1000 */
+  environment: string;
   /** @maxLength 300 */
   tone: string;
   /**
@@ -138,6 +140,8 @@ export interface StudentHousingAgentSettingsInput {
      * @maxLength 1000
      */
   persona: string;
+  /** Atmosphere, warmth, pacing, and interaction style for the conversation. @minLength 1 @maxLength 1000 */
+  environment: string;
   /**
      * @minLength 1
      * @maxLength 300

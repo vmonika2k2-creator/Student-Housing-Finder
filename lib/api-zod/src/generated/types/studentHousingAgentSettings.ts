@@ -9,6 +9,8 @@
 export interface StudentHousingAgentSettings {
   /** @maxLength 1000 */
   persona: string;
+  /** Atmosphere, warmth, pacing, and interaction style for the conversation. @maxLength 1000 */
+  environment: string;
   /** @maxLength 300 */
   tone: string;
   /**

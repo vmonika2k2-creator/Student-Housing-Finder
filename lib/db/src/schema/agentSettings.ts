@@ -12,6 +12,7 @@ export const studentHousingAgentSettingsTable = pgTable(
   {
     id: integer("id").primaryKey(),
     persona: text("persona").notNull(),
+    environment: text("environment"),
     tone: text("tone").notNull(),
     empathyScale: integer("empathy_scale").notNull(),
     goalOrientationScale: integer("goal_orientation_scale").notNull(),

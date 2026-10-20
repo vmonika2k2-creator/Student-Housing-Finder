@@ -222,6 +222,7 @@ router.put("/housing/admin/agent-settings", requireAdmin, async (req, res): Prom
   try {
     const saved = await saveAgentSettings({
       persona,
+      environment: parsed.data.environment.trim(),
       tone,
       empathyScale: parsed.data.empathyScale,
       goalOrientationScale: parsed.data.goalOrientationScale,

@@ -7,6 +7,7 @@ export const EMPATHY_STAGE_COUNT = 5;
 
 export type AgentSettings = {
   persona: string;
+  environment: string;
   tone: string;
   empathyScale: number;
   goalOrientationScale: number;
@@ -54,9 +55,13 @@ export const DEFAULT_EMPATHY_EXAMPLES: string[] = [
 export const DEFAULT_GOAL =
   "Help the student narrow down to two or three homes they would be happy to visit.";
 
+export const DEFAULT_ENVIRONMENT =
+  "Create a calm, welcoming, home-like conversation. Be warm and reassuring without being overly familiar. Keep a steady, unhurried pace, use plain language, and make each exchange feel like a helpful conversation rather than a form. Give the student room to think and choose.";
+
 export const DEFAULT_AGENT_SETTINGS: AgentSettingsInput = {
   persona:
     "You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.",
+  environment: DEFAULT_ENVIRONMENT,
   tone: "Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.",
   empathyScale: 5,
   goalOrientationScale: 5,
@@ -80,6 +85,7 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
   });
   return {
     persona: row.persona,
+    environment: row.environment ?? DEFAULT_ENVIRONMENT,
     tone: row.tone,
     empathyScale: row.empathyScale,
     goalOrientationScale: row.goalOrientationScale,
@@ -103,6 +109,7 @@ export async function getAgentSettings(): Promise<AgentSettings> {
     .values({
       id: SETTINGS_ROW_ID,
       persona: DEFAULT_AGENT_SETTINGS.persona,
+      environment: DEFAULT_ENVIRONMENT,
       tone: DEFAULT_AGENT_SETTINGS.tone,
       empathyScale: DEFAULT_AGENT_SETTINGS.empathyScale,
       goalOrientationScale: DEFAULT_AGENT_SETTINGS.goalOrientationScale,
@@ -178,6 +185,7 @@ export function buildBehaviorInstructions(settings: AgentSettingsInput): string 
   const lines: string[] = [
     "Style settings chosen by the site admin. They change voice and approach only, and never override the accuracy, safety, and privacy rules above.",
     `Persona: ${settings.persona}`,
+    `Environment: ${settings.environment.trim() || DEFAULT_ENVIRONMENT}`,
     `Tone: ${settings.tone}`,
     `Empathy: ${settings.empathyScale}/10, which is stage ${stage + 1} of ${EMPATHY_STAGE_COUNT} (${stageInfo.label}). ${empathyGuidance(settings.empathyScale)}`,
   ];
@@ -204,7 +212,7 @@ export function buildBehaviorInstructions(settings: AgentSettingsInput): string 
 
   const goal = settings.goal.trim();
   if (goal) {
-    lines.push(`Goal for conversations: ${goal}`);
+    lines.push(`Goal and desired outcome: ${goal}. Use this purpose to shape the conversation flow, relevant intake questions or form structure, and decision guidance. Follow the separate conversation-behavior settings for the specific sequence and question rules.`);
   }
   lines.push(
     `Initiative: ${settings.goalOrientationScale}/10 (0 = passive, 10 = goal-oriented). ${initiativeGuidance(settings.goalOrientationScale)}${goal ? "" : " No goal is set, so treat the student's next housing decision as the goal."}`,
@@ -215,7 +223,7 @@ export function buildBehaviorInstructions(settings: AgentSettingsInput): string 
 export function buildSystemPrompt(settings: AgentSettingsInput): string {
   const text = (value: string | undefined, fallback: string) => value?.trim() || fallback;
   return [
-    "PERSONALITY", text(settings.persona, DEFAULT_AGENT_SETTINGS.persona), text(settings.tone, DEFAULT_AGENT_SETTINGS.tone),
+    "PERSONALITY AND CONVERSATION ENVIRONMENT", text(settings.persona, DEFAULT_AGENT_SETTINGS.persona), text(settings.environment, DEFAULT_ENVIRONMENT), text(settings.tone, DEFAULT_AGENT_SETTINGS.tone),
     `Empathy: ${settings.empathyScale}/10. Initiative: ${settings.goalOrientationScale}/10.`,
     buildBehaviorInstructions(settings),
     "AGENT BEHAVIOUR", text(settings.conversationBehavior, DEFAULT_AGENT_SETTINGS.conversationBehavior),

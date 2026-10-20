@@ -116,6 +116,8 @@ export const LogoutHousingAdminResponse = zod.object({
  */
 export const getHousingAdminAgentSettingsResponsePersonaMax = 1000;
 
+export const getHousingAdminAgentSettingsResponseEnvironmentMax = 1000;
+
 export const getHousingAdminAgentSettingsResponseToneMax = 300;
 
 export const getHousingAdminAgentSettingsResponseEmpathyScaleMin = 0;
@@ -135,6 +137,7 @@ export const getHousingAdminAgentSettingsResponseGoalMax = 500;
 
 export const GetHousingAdminAgentSettingsResponse = zod.object({
   "persona": zod.string().max(getHousingAdminAgentSettingsResponsePersonaMax),
+  "environment": zod.string().max(getHousingAdminAgentSettingsResponseEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
   "tone": zod.string().max(getHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(getHousingAdminAgentSettingsResponseEmpathyScaleMin).max(getHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(getHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(getHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
@@ -156,6 +159,8 @@ export const GetHousingAdminAgentSettingsResponse = zod.object({
  */
 export const updateHousingAdminAgentSettingsBodyPersonaMax = 1000;
 
+export const updateHousingAdminAgentSettingsBodyEnvironmentMax = 1000;
+
 export const updateHousingAdminAgentSettingsBodyToneMax = 300;
 
 export const updateHousingAdminAgentSettingsBodyEmpathyScaleMin = 0;
@@ -175,6 +180,7 @@ export const updateHousingAdminAgentSettingsBodyGoalMax = 500;
 
 export const UpdateHousingAdminAgentSettingsBody = zod.object({
   "persona": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyPersonaMax),
+  "environment": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
   "tone": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyEmpathyScaleMin).max(updateHousingAdminAgentSettingsBodyEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax),
@@ -190,6 +196,8 @@ export const UpdateHousingAdminAgentSettingsBody = zod.object({
 })
 
 export const updateHousingAdminAgentSettingsResponsePersonaMax = 1000;
+
+export const updateHousingAdminAgentSettingsResponseEnvironmentMax = 1000;
 
 export const updateHousingAdminAgentSettingsResponseToneMax = 300;
 
@@ -210,6 +218,7 @@ export const updateHousingAdminAgentSettingsResponseGoalMax = 500;
 
 export const UpdateHousingAdminAgentSettingsResponse = zod.object({
   "persona": zod.string().max(updateHousingAdminAgentSettingsResponsePersonaMax),
+  "environment": zod.string().max(updateHousingAdminAgentSettingsResponseEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
   "tone": zod.string().max(updateHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseEmpathyScaleMin).max(updateHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
