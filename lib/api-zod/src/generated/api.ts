@@ -138,6 +138,7 @@ export const getHousingAdminAgentSettingsResponseGoalMax = 500;
 export const GetHousingAdminAgentSettingsResponse = zod.object({
   "persona": zod.string().max(getHousingAdminAgentSettingsResponsePersonaMax),
   "environment": zod.string().max(getHousingAdminAgentSettingsResponseEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
+  "rentalSearchProvider": zod.enum(['squareyards', 'apify']).describe('Listing source used for new rental searches.'),
   "tone": zod.string().max(getHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(getHousingAdminAgentSettingsResponseEmpathyScaleMin).max(getHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(getHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(getHousingAdminAgentSettingsResponseGoalOrientationScaleMax),
@@ -181,6 +182,7 @@ export const updateHousingAdminAgentSettingsBodyGoalMax = 500;
 export const UpdateHousingAdminAgentSettingsBody = zod.object({
   "persona": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyPersonaMax),
   "environment": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
+  "rentalSearchProvider": zod.enum(['squareyards', 'apify']).describe('Listing source used for new rental searches.'),
   "tone": zod.string().min(1).max(updateHousingAdminAgentSettingsBodyToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyEmpathyScaleMin).max(updateHousingAdminAgentSettingsBodyEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsBodyGoalOrientationScaleMax),
@@ -219,6 +221,7 @@ export const updateHousingAdminAgentSettingsResponseGoalMax = 500;
 export const UpdateHousingAdminAgentSettingsResponse = zod.object({
   "persona": zod.string().max(updateHousingAdminAgentSettingsResponsePersonaMax),
   "environment": zod.string().max(updateHousingAdminAgentSettingsResponseEnvironmentMax).describe('Atmosphere, warmth, pacing, and interaction style for the conversation.'),
+  "rentalSearchProvider": zod.enum(['squareyards', 'apify']).describe('Listing source used for new rental searches.'),
   "tone": zod.string().max(updateHousingAdminAgentSettingsResponseToneMax),
   "empathyScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseEmpathyScaleMin).max(updateHousingAdminAgentSettingsResponseEmpathyScaleMax),
   "goalOrientationScale": zod.number().int().min(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMin).max(updateHousingAdminAgentSettingsResponseGoalOrientationScaleMax),

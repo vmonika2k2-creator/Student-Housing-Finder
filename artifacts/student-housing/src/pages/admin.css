@@ -265,4 +265,16 @@
 .integration-list li { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #e1e4d9; border-radius: 7px; }
 .integration-list li > span { flex: 1; min-width: 0; display: grid; gap: 4px; }
 .integration-list a { overflow-wrap: anywhere; color: #39634e; font-size: 12px; }
+.live-mcp-card { display: grid; gap: 12px; margin: 15px 0; padding: 17px; border: 1px solid #d9e3d2; border-radius: 9px; background: linear-gradient(145deg, #f5f8f0, #fffef9 72%); }
+.live-mcp-card > p { max-width: 680px; margin: 0; color: #687468; font-size: 11px; line-height: 1.65; }
+.live-mcp-card h3 { margin: 4px 0 0; color: #315847; font: 700 19px/1.2 var(--app-font-serif); }
+.live-mcp-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.live-mcp-badge { flex: 0 0 auto; border: 1px solid #e3d8be; border-radius: 20px; padding: 5px 9px; background: #faf4e8; color: #806d45; font-size: 9px; font-weight: 700; }
+.live-mcp-badge.connected { border-color: #c8ddc7; background: #eaf3e8; color: #376346; }
+.live-mcp-card > a { width: fit-content; color: #39634e; font-size: 11px; }
+.live-mcp-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.live-mcp-controls [role="status"] { color: #687468; font-size: 10px; }
+.live-mcp-card select { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #d9ddd1; border-radius: 6px; background: #fffef9; color: #34463a; }
+.live-mcp-note code { border-radius: 4px; padding: 2px 5px; background: #e8eee2; color: #315847; font-size: 10px; }
 @media (max-width: 600px) { .integration-list li { align-items: stretch; flex-direction: column; } }
+@media (max-width: 600px) { .live-mcp-heading { align-items: flex-start; flex-direction: column; } }

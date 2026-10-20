@@ -8,6 +8,7 @@ export const EMPATHY_STAGE_COUNT = 5;
 export type AgentSettings = {
   persona: string;
   environment: string;
+  rentalSearchProvider: "squareyards" | "apify";
   tone: string;
   empathyScale: number;
   goalOrientationScale: number;
@@ -58,10 +59,14 @@ export const DEFAULT_GOAL =
 export const DEFAULT_ENVIRONMENT =
   "Create a calm, welcoming, home-like conversation. Be warm and reassuring without being overly familiar. Keep a steady, unhurried pace, use plain language, and make each exchange feel like a helpful conversation rather than a form. Give the student room to think and choose.";
 
+export const DEFAULT_RENTAL_SEARCH_PROVIDER =
+  process.env.HOUSING_SEARCH_PROVIDER === "apify" ? "apify" : "squareyards";
+
 export const DEFAULT_AGENT_SETTINGS: AgentSettingsInput = {
   persona:
     "You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.",
   environment: DEFAULT_ENVIRONMENT,
+  rentalSearchProvider: DEFAULT_RENTAL_SEARCH_PROVIDER,
   tone: "Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.",
   empathyScale: 5,
   goalOrientationScale: 5,
@@ -86,6 +91,7 @@ function toSettings(row: StudentHousingAgentSettingsRow): AgentSettings {
   return {
     persona: row.persona,
     environment: row.environment ?? DEFAULT_ENVIRONMENT,
+    rentalSearchProvider: row.rentalSearchProvider === "apify" ? "apify" : row.rentalSearchProvider === "squareyards" ? "squareyards" : DEFAULT_RENTAL_SEARCH_PROVIDER,
     tone: row.tone,
     empathyScale: row.empathyScale,
     goalOrientationScale: row.goalOrientationScale,
@@ -110,6 +116,7 @@ export async function getAgentSettings(): Promise<AgentSettings> {
       id: SETTINGS_ROW_ID,
       persona: DEFAULT_AGENT_SETTINGS.persona,
       environment: DEFAULT_ENVIRONMENT,
+      rentalSearchProvider: DEFAULT_RENTAL_SEARCH_PROVIDER,
       tone: DEFAULT_AGENT_SETTINGS.tone,
       empathyScale: DEFAULT_AGENT_SETTINGS.empathyScale,
       goalOrientationScale: DEFAULT_AGENT_SETTINGS.goalOrientationScale,

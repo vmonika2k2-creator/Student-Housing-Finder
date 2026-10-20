@@ -11,6 +11,8 @@ export interface StudentHousingAgentSettings {
   persona: string;
   /** Atmosphere, warmth, pacing, and interaction style for the conversation. @maxLength 1000 */
   environment: string;
+  /** Listing source used for new rental searches. */
+  rentalSearchProvider: 'squareyards' | 'apify';
   /** @maxLength 300 */
   tone: string;
   /**

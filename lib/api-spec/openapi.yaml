@@ -369,6 +369,10 @@ components:
           type: string
           description: Atmosphere, warmth, pacing, and interaction style for the conversation.
           maxLength: 1000
+        rentalSearchProvider:
+          type: string
+          enum: [squareyards, apify]
+          description: Listing source used for new rental searches.
         tone:
           type: string
           maxLength: 300
@@ -415,7 +419,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [persona, environment, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, integrations, updatedAt]
+      required: [persona, environment, rentalSearchProvider, tone, empathyScale, goalOrientationScale, empathyExamples, goal, conversationBehavior, guardrails, handoverRules, knowledgeRules, ctaSettings, feedbackSettings, integrations, updatedAt]
     StudentHousingAgentSettingsInput:
       type: object
       properties:
@@ -428,6 +432,10 @@ components:
           minLength: 1
           description: Atmosphere, warmth, pacing, and interaction style for the conversation.
           maxLength: 1000
+        rentalSearchProvider:
+          type: string
+          enum: [squareyards, apify]
+          description: Listing source used for new rental searches.
         tone:
           type: string
           minLength: 1
@@ -472,5 +480,5 @@ components:
               label: { type: string, minLength: 1, maxLength: 100 }
               url: { type: string, format: uri, maxLength: 1000 }
             required: [id, type, label, url]
-      required: [persona, environment, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
+      required: [persona, environment, rentalSearchProvider, tone, empathyScale, goalOrientationScale, empathyExamples, goal]
 

@@ -45,8 +45,14 @@ const rentalSearchLimiter = rateLimit({
   message: { error: "Please wait a moment before searching again." },
 });
 
-router.get("/housing/search/provider", (_req, res): void => {
-  res.json({ provider: process.env.HOUSING_SEARCH_PROVIDER === "apify" ? "apify" : "squareyards" });
+router.get("/housing/search/provider", async (req, res): Promise<void> => {
+  try {
+    const settings = await getAgentSettings();
+    res.json({ provider: settings.rentalSearchProvider });
+  } catch (error) {
+    req.log.error({ err: error }, "Could not load rental search provider");
+    res.status(503).json({ error: "The rental search provider could not be loaded." });
+  }
 });
 
 router.get("/housing/listings", (_req, res): void => {
@@ -55,7 +61,8 @@ router.get("/housing/listings", (_req, res): void => {
 
 router.post("/housing/search", rentalSearchLimiter, async (req, res): Promise<void> => {
   try {
-    const result = process.env.HOUSING_SEARCH_PROVIDER === "apify"
+    const settings = await getAgentSettings();
+    const result = settings.rentalSearchProvider === "apify"
       ? await searchApifyIndiaRentals(req.body)
       : await searchSquareYardsRentals(req.body);
     res.json(result);

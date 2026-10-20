@@ -88,6 +88,7 @@ const EMPATHY_EXAMPLE_PLACEHOLDERS = [
 const DEFAULT_SETTINGS: StudentHousingAgentSettingsInput = {
   persona: 'You are Dormo, a student-first housing guide for Indian UG and PG students. Help students find and compare flats, PGs, hostels, shared rooms, and nearby daily-life services with clarity and confidence. Understand safety, food, commute, privacy, budget, and convenience matter. Keep the student in control and help them think clearly; do not decide for them.',
   environment: 'Create a calm, welcoming, home-like conversation. Be warm and reassuring without being overly familiar. Keep a steady, unhurried pace, use plain language, and make each exchange feel like a helpful conversation rather than a form. Give the student room to think and choose.',
+  rentalSearchProvider: 'squareyards',
   tone: 'Clear, warm, calm, respectful, and student-friendly. Use short sentences and simple words. Be considerate, never pushy, salesy, or overly emotional. Acknowledge uncertainty, budget pressure, safety concerns, and frustration briefly, then move to a useful next step.',
   empathyScale: 5,
   goalOrientationScale: 5,
@@ -117,6 +118,7 @@ function toFormValues(settings: StudentHousingAgentSettingsInput): StudentHousin
   return {
     persona: settings.persona,
     environment: settings.environment ?? DEFAULT_SETTINGS.environment,
+    rentalSearchProvider: settings.rentalSearchProvider ?? DEFAULT_SETTINGS.rentalSearchProvider,
     tone: settings.tone,
     empathyScale: settings.empathyScale,
     goalOrientationScale: settings.goalOrientationScale,
@@ -286,6 +288,7 @@ function SettingsEditor({
   const [editingIntegrationId, setEditingIntegrationId] = useState('');
   const [apifyStatus, setApifyStatus] = useState('Not checked');
   const [apifyChecking, setApifyChecking] = useState(false);
+  const [apifyConnectionConnected, setApifyConnectionConnected] = useState(false);
 
   useEffect(() => {
     if (settings.data) {
@@ -345,14 +348,18 @@ function SettingsEditor({
   const empathyStage = empathyStageFor(empathy);
   const goalText = watch('goal') ?? '';
   const integrations = watch('integrations') ?? [];
+  const rentalSearchProvider = watch('rentalSearchProvider');
   const [resetNote, setResetNote] = useState(false);
 
   async function checkApifyStatus() {
     setApifyChecking(true);
+    setApifyConnectionConnected(false);
     try {
       const response = await fetch('/api/housing/admin/integrations/apify/status', { credentials: 'same-origin' });
       const result = await response.json() as { connected?: boolean; tools?: string[]; error?: string };
-      setApifyStatus(response.ok && result.connected ? 'Connected · ' + (result.tools?.length ?? 0) + ' tools discovered' : result.error ?? 'Connection check failed.');
+      const connected = response.ok && result.connected === true;
+      setApifyConnectionConnected(connected);
+      setApifyStatus(connected ? 'Connected · ' + (result.tools?.length ?? 0) + ' tools available' : result.error ?? 'Connection check failed.');
     } catch {
       setApifyStatus('Connection check failed.');
     } finally {
@@ -376,6 +383,7 @@ function SettingsEditor({
     const options = { shouldDirty: true, shouldValidate: true } as const;
     setValue('persona', DEFAULT_SETTINGS.persona, options);
     setValue('environment', DEFAULT_SETTINGS.environment, options);
+    setValue('rentalSearchProvider', DEFAULT_SETTINGS.rentalSearchProvider, options);
     setValue('tone', DEFAULT_SETTINGS.tone, options);
     setValue('empathyScale', DEFAULT_SETTINGS.empathyScale, options);
     setValue('goalOrientationScale', DEFAULT_SETTINGS.goalOrientationScale, options);
@@ -548,8 +556,19 @@ function SettingsEditor({
                 <div className="section-number">11</div>
                 <div className="section-body">
                   <div className="editor-section-heading"><div><p className="admin-eyebrow">CONNECTED RESOURCES</p><h2 id="integrations-title">API and MCP links</h2></div></div>
-                  <div className="integration-form"><p>Saved links are references only. The Apify connection uses the server-side APIFY_API_TOKEN Replit Secret. Property searches can incur charges.</p><button type="button" className="admin-secondary-button" onClick={() => void checkApifyStatus()} disabled={apifyChecking}>{apifyChecking ? 'Checking…' : 'Check Apify connection'}</button><span role="status">{apifyStatus}</span></div>
-                  <p className="editor-intro">Save reference links for your team. These links are managed here; adding a link does not authorize API calls or connect an MCP server.</p>
+                  <div className="live-mcp-card" data-testid="panel-india-real-estate-mcp">
+                    <div className="live-mcp-heading"><div><p className="admin-eyebrow">BUILT-IN LIVE MCP</p><h3>India Real Estate MCP</h3></div><span className={`live-mcp-badge${apifyConnectionConnected ? ' connected' : ''}`} data-testid="status-india-real-estate-mcp">{apifyConnectionConnected ? 'Connected' : 'Connection not checked'}</span></div>
+                    <p>Search home listings from 99acres, MagicBricks, NoBroker, and Housing.com. Results are fetched by the server and can be shown in browse and chat.</p>
+                    <a href="https://apify.com/themineworks/india-real-estate-mcp" target="_blank" rel="noreferrer">View actor details</a>
+                    <div className="live-mcp-controls"><button type="button" className="admin-secondary-button" onClick={() => void checkApifyStatus()} disabled={apifyChecking}>{apifyChecking ? 'Checking connection…' : 'Check live connection'}</button><span role="status" aria-live="polite">{apifyStatus}</span></div>
+                    <label className="admin-label" htmlFor="rental-search-provider">Source for new rental searches</label>
+                    <select id="rental-search-provider" value={rentalSearchProvider} onChange={(event) => setValue('rentalSearchProvider', event.target.value as 'squareyards' | 'apify', { shouldDirty: true, shouldValidate: true })} data-testid="select-rental-search-provider">
+                      <option value="squareyards">Square Yards</option>
+                      <option value="apify">India Real Estate MCP · four portals</option>
+                    </select>
+                    <p className="live-mcp-note">Save settings to apply the selected source. To use this MCP, add <code>APIFY_API_TOKEN</code> in Replit Secrets, then check the connection. Live searches may incur Apify charges.</p>
+                  </div>
+                  <p className="editor-intro">Other API/MCP links below are saved as team references; adding one does not connect a new service.</p>
                   <div className="integration-form">
                     <label className="admin-label" htmlFor="integration-type">Type</label>
                     <select id="integration-type" value={integrationType} onChange={(event) => setIntegrationType(event.target.value as 'api' | 'mcp')}><option value="api">API</option><option value="mcp">MCP</option></select>
